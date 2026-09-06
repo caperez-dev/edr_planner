@@ -9,11 +9,92 @@
   <!-- Lucide Icons -->
   <script src="https://unpkg.com/lucide@latest"></script>
   <style>
+    :root {
+      --planner-ink: #0f172a;
+      --planner-line: #e2e8f0;
+      --planner-accent: #4f46e5;
+    }
+
+    html, body { min-height: 100%; }
+    h1 { font-size: 1.125rem; line-height: 1.35; }
+    h2 { font-size: 0.75rem; line-height: 1.4; }
+    h3 { font-size: 1rem; line-height: 1.4; }
+    :where(button, input, textarea, select, [tabindex]):focus-visible {
+      outline: 2px solid var(--planner-accent);
+      outline-offset: 2px;
+    }
+    ::selection { background: #c7d2fe; color: var(--planner-ink); }
+
     /* Custom scrollbars */
     ::-webkit-scrollbar { width: 6px; height: 6px; }
     ::-webkit-scrollbar-track { background: #f1f5f9; }
     ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
     ::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
+
+    @media (max-width: 767px) {
+      header > div {
+        height: auto;
+        min-height: 4rem;
+        padding-top: 0.75rem;
+        padding-bottom: 0.75rem;
+        flex-wrap: wrap;
+        gap: 0.75rem;
+      }
+
+      header > div > div:last-child {
+        width: 100%;
+        flex-wrap: wrap;
+        gap: 0.5rem;
+      }
+
+      header .relative.w-64 {
+        flex: 1 1 12rem;
+        width: auto;
+      }
+
+      header h1 { font-size: 1rem; }
+
+      body > .flex-1.flex {
+        flex-direction: column;
+        overflow: visible;
+      }
+
+      body > .flex-1.flex > aside {
+        width: 100%;
+        max-height: 16rem;
+        border-right: 0;
+        border-bottom: 1px solid var(--planner-line);
+      }
+
+      body > .flex-1.flex > main {
+        min-height: 24rem;
+        padding: 1rem;
+        overflow: visible;
+      }
+
+      #tableContainer .overflow-x-auto { max-height: none; }
+      #activeViewBanner { align-items: flex-start; gap: 0.75rem; flex-wrap: wrap; }
+      #calendarToolbar { align-items: stretch; flex-direction: column; }
+      .calendar-week-grid { min-width: 720px; }
+      .calendar-month-grid { min-width: 620px; }
+      .calendar-year-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    }
+
+    .calendar-surface { color: #334155; background: #ffffff; border-color: #e2e8f0; }
+    .calendar-toolbar { background: #ffffff; border-color: #e2e8f0; }
+    .calendar-segment { color: #64748b; }
+    .calendar-segment.active { color: #ffffff; background: #4f46e5; }
+    .calendar-nav-button { color: #475569; border-color: #cbd5e1; background: #ffffff; }
+    .calendar-nav-button:hover { color: #4f46e5; border-color: #818cf8; }
+    .calendar-grid-line { border-color: #e2e8f0; }
+    .calendar-muted { color: #94a3b8; }
+    .calendar-day-number { color: #475569; }
+    .calendar-day-number.today { color: #4f46e5; }
+    .calendar-event { background: #eef2ff; border-left: 2px solid #4f46e5; color: #334155; }
+    .calendar-event strong { color: #4338ca; }
+    .calendar-slot { min-height: 3.5rem; }
+    .calendar-month-cell { min-height: 7rem; }
+    .calendar-mini-month { background: #ffffff; border: 1px solid #e2e8f0; }
   </style>
 </head>
 <body class="bg-slate-50 text-slate-800 font-sans antialiased min-h-screen flex flex-col">
@@ -26,7 +107,10 @@
           <i data-lucide="layers" class="w-6 h-6"></i>
         </div>
         <div>
-          <h1 class="text-lg font-semibold tracking-tight text-slate-900">EDR MOP & Application Planner</h1>
+          <h1 class="text-lg font-semibold tracking-tight text-slate-900 flex items-baseline gap-2">
+            <span>EDR MOP & Application Planner</span>
+            <span class="text-[10px] font-mono font-medium tracking-normal text-indigo-500">v1.0.0</span>
+          </h1>
         </div>
       </div>
 
@@ -101,7 +185,30 @@
           <span class="text-xs text-slate-500 font-medium">Active View:</span>
           <span id="currentViewLabel" class="text-xs font-bold text-indigo-600 bg-indigo-50 border border-indigo-200 px-2.5 py-1 rounded-md">All Applications</span>
         </div>
-        <p class="text-[11px] text-slate-400">Double-click or right-click any task cell to edit details</p>
+        <div class="flex items-center gap-3">
+          <p class="text-[11px] text-slate-400">Double-click or right-click any task cell to edit details</p>
+          <button id="openCalendarBtn" class="rounded-md border border-slate-300 px-2.5 py-1 text-[11px] font-semibold text-slate-600 hover:border-indigo-400 hover:text-indigo-600">Calendar</button>
+        </div>
+      </div>
+
+      <!-- Calendar View Controls -->
+      <div id="calendarToolbar" class="hidden items-center justify-between gap-3 rounded-xl border px-3 py-2 calendar-toolbar">
+        <div class="flex items-center gap-2">
+          <button id="calendarTodayBtn" class="calendar-nav-button rounded-md border px-3 py-1.5 text-xs font-semibold transition-colors">Today</button>
+          <button id="calendarPrevBtn" aria-label="Previous period" class="calendar-nav-button rounded-md border p-1.5 transition-colors">
+            <i data-lucide="chevron-left" class="w-4 h-4"></i>
+          </button>
+          <button id="calendarNextBtn" aria-label="Next period" class="calendar-nav-button rounded-md border p-1.5 transition-colors">
+            <i data-lucide="chevron-right" class="w-4 h-4"></i>
+          </button>
+            <strong id="calendarPeriodLabel" class="ml-1 text-sm text-slate-700"></strong>
+          </div>
+          <div class="flex items-center rounded-md border border-slate-200 bg-slate-50 p-1" role="tablist" aria-label="Calendar view">
+          <button data-calendar-view="day" role="tab" class="calendar-segment rounded px-2.5 py-1 text-[11px] font-semibold transition-colors">Day</button>
+          <button data-calendar-view="week" role="tab" class="calendar-segment rounded px-2.5 py-1 text-[11px] font-semibold transition-colors">Week</button>
+          <button data-calendar-view="month" role="tab" class="calendar-segment rounded px-2.5 py-1 text-[11px] font-semibold transition-colors">Month</button>
+          <button data-calendar-view="year" role="tab" class="calendar-segment rounded px-2.5 py-1 text-[11px] font-semibold transition-colors">Year</button>
+        </div>
       </div>
 
       <!-- Empty Schedule Prompt -->
@@ -120,10 +227,13 @@
                 <th data-col="index" class="py-2 px-3 border-r border-slate-200 w-14 text-center bg-slate-200/60 text-slate-500">#</th>
                 <th data-col="appName" class="py-2 px-3 border-r border-slate-200 min-w-[150px]">App Name</th>
                 <th data-col="task" class="py-2 px-3 border-r border-slate-200 min-w-[280px]">Task</th>
+                <th data-col="dependency" class="py-2 px-3 border-r border-slate-200 min-w-[180px]">Dependency</th>
                 <th data-col="type" class="py-2 px-3 border-r border-slate-200 min-w-[120px]">Type</th>
                 <th data-col="duration" class="py-2 px-3 border-r border-slate-200 min-w-[110px]">Duration</th>
-                <th data-col="start" class="py-2 px-3 border-r border-slate-200 min-w-[160px]">Start</th>
-                <th data-col="end" class="py-2 px-3 border-r border-slate-200 min-w-[160px]">End</th>
+                <th data-col="start" class="py-2 px-3 border-r border-slate-200 min-w-[160px]">PLANNED START</th>
+                <th data-col="end" class="py-2 px-3 border-r border-slate-200 min-w-[160px]">PLANNED END</th>
+                <th data-col="actualStart" class="py-2 px-3 border-r border-slate-200 min-w-[160px]">Actual Start</th>
+                <th data-col="actualEnd" class="py-2 px-3 border-r border-slate-200 min-w-[160px]">Actual End</th>
                 <th data-col="owner" class="py-2 px-3 border-r border-slate-200 min-w-[120px]">Owner</th>
                 <th data-col="backup" class="py-2 px-3 border-r border-slate-200 min-w-[120px]">Backup</th>
                 <th data-col="checker" class="py-2 px-3 border-r border-slate-200 min-w-[120px]">Checker</th>
@@ -136,6 +246,11 @@
             </tbody>
           </table>
         </div>
+      </div>
+
+      <!-- Calendar View -->
+      <div id="calendarContainer" class="hidden rounded-xl border overflow-auto shadow-sm calendar-surface">
+        <div id="calendarContent" class="min-w-0"></div>
       </div>
 
     </main>
@@ -285,6 +400,14 @@
     const dropZone = document.getElementById('dropZone');
     const fileInput = document.getElementById('fileInput');
     const tableContainer = document.getElementById('tableContainer');
+    const calendarContainer = document.getElementById('calendarContainer');
+    const calendarContent = document.getElementById('calendarContent');
+    const calendarToolbar = document.getElementById('calendarToolbar');
+    const calendarPeriodLabel = document.getElementById('calendarPeriodLabel');
+    const calendarTodayBtn = document.getElementById('calendarTodayBtn');
+    const calendarPrevBtn = document.getElementById('calendarPrevBtn');
+    const calendarNextBtn = document.getElementById('calendarNextBtn');
+    const calendarViewButtons = document.querySelectorAll('[data-calendar-view]');
     const tableHeader = document.getElementById('tableHeader');
     const tableBody = document.getElementById('tableBody');
     const emptyState = document.getElementById('emptyState');
@@ -296,6 +419,7 @@
     
     const activeViewBanner = document.getElementById('activeViewBanner');
     const currentViewLabel = document.getElementById('currentViewLabel');
+    const openCalendarBtn = document.getElementById('openCalendarBtn');
 
     // Header Column Context Menu
     const columnContextMenu = document.getElementById('columnContextMenu');
@@ -342,10 +466,13 @@
       { id: 'index', label: '#' },
       { id: 'appName', label: 'App Name' },
       { id: 'task', label: 'Task' },
+      { id: 'dependency', label: 'Dependency' },
       { id: 'type', label: 'Type' },
       { id: 'duration', label: 'Duration' },
-      { id: 'start', label: 'Start' },
-      { id: 'end', label: 'End' },
+      { id: 'start', label: 'PLANNED START' },
+      { id: 'end', label: 'PLANNED END' },
+      { id: 'actualStart', label: 'Actual Start' },
+      { id: 'actualEnd', label: 'Actual End' },
       { id: 'owner', label: 'Owner' },
       { id: 'backup', label: 'Backup' },
       { id: 'checker', label: 'Checker' },
@@ -354,17 +481,32 @@
     ];
 
     const DEFAULT_COLUMN_VISIBILITY = COLUMNS.reduce((acc, col) => {
-      acc[col.id] = true;
+      acc[col.id] = !['actualStart', 'actualEnd', 'dependency'].includes(col.id);
       return acc;
     }, {});
 
     let uploadedApps = loadFromStorage(STORAGE_KEY_APPS, []);
     let collapsedStates = loadFromStorage(STORAGE_KEY_STATES, {});
-    let columnVisibility = loadFromStorage(STORAGE_KEY_COLUMNS, DEFAULT_COLUMN_VISIBILITY);
+    let columnVisibility = {
+      ...DEFAULT_COLUMN_VISIBILITY,
+      ...loadFromStorage(STORAGE_KEY_COLUMNS, {})
+    };
     let selectedAppId = loadFromStorage(STORAGE_KEY_SELECTED_APP, 'ALL');
 
     let activeTaskRef = { appId: null, taskId: null, roleField: 'owner' };
     let tempSelectedOwner = '';
+    let plannerView = 'table';
+    let calendarView = 'month';
+    let calendarDate = new Date();
+
+    const editModals = [editTaskModal, editTypeModal, editOwnerModal, editCommentModal];
+
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape') {
+        editModals.forEach(modal => modal.classList.add('hidden'));
+        uploadModal.classList.add('hidden');
+      }
+    });
 
     const STRUCTURE = [
       {
@@ -435,11 +577,14 @@
               const tasks = rawTasks.map((t, idx) => ({
                 id: t.id || 't-' + Date.now() + '-' + idx + '-' + Math.random().toString(36).substr(2, 4),
                 task: t.task || t.Task || 'Unnamed Task',
+                dependency: t.dependency || t.Dependency || t.dependencies || t.Dependencies || '-',
                 type: t.itemType || t.Type || 'Task',
                 details: t.details || t.Details || '',
                 duration: t.duration || t.Duration || 0,
                 start: t.start || t.Start || '-',
                 end: t.end || t.End || '-',
+                actualStart: t.actualStart || t.ActualStart || t.actual_start || '-',
+                actualEnd: t.actualEnd || t.ActualEnd || t.actual_end || '-',
                 owner: t.owner || t.Owner || '-',
                 backup: t.backup || t.Backup || '-',
                 checker: t.checker || t.Checker || '-',
@@ -572,13 +717,13 @@
     function toggleCollapse(id) {
       collapsedStates[id] = !collapsedStates[id];
       saveToStorage(STORAGE_KEY_STATES, collapsedStates);
-      renderPlanner();
+      renderPlanner(true);
     }
 
     expandAllBtn.addEventListener('click', () => {
       collapsedStates = {};
       saveToStorage(STORAGE_KEY_STATES, collapsedStates);
-      renderPlanner();
+      renderPlanner(true);
     });
 
     collapseAllBtn.addEventListener('click', () => {
@@ -587,7 +732,7 @@
         p.subPhases.forEach(sp => collapsedStates[`${p.phase}-${sp}`] = true);
       });
       saveToStorage(STORAGE_KEY_STATES, collapsedStates);
-      renderPlanner();
+      renderPlanner(true);
     });
 
     // Column Context Menu
@@ -652,7 +797,155 @@
       });
     }
 
-    function renderPlanner() {
+    function parseCalendarDate(value) {
+      if (!value || value === '-') return null;
+      const date = new Date(value);
+      return Number.isNaN(date.getTime()) ? null : date;
+    }
+
+    function calendarDateKey(date) {
+      return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
+    }
+
+    function calendarStartOfDay(date) {
+      return new Date(date.getFullYear(), date.getMonth(), date.getDate());
+    }
+
+    function calendarStartOfWeek(date) {
+      const day = date.getDay();
+      const mondayOffset = day === 0 ? -6 : 1 - day;
+      const start = calendarStartOfDay(date);
+      start.setDate(start.getDate() + mondayOffset);
+      return start;
+    }
+
+    function calendarHourLabel(hour) {
+      const period = hour >= 12 ? 'PM' : 'AM';
+      const displayHour = hour % 12 || 12;
+      return `${displayHour}:00 ${period}`;
+    }
+
+    function calendarEventCard(item) {
+      return `<div class="calendar-event mb-1 rounded px-1.5 py-1 text-[10px] leading-tight" title="${item._appName}: ${item.task}"><strong class="block truncate">${item._appName}</strong><span class="block truncate">${item.task}</span></div>`;
+    }
+
+    function calendarItemsForDate(items, date) {
+      const key = calendarDateKey(date);
+      return items.filter(item => item._calendarDate && calendarDateKey(item._calendarDate) === key);
+    }
+
+    function renderCalendar(items) {
+      const datedItems = items
+        .map(item => ({ ...item, _calendarDate: parseCalendarDate(item.start) }))
+        .filter(item => item._calendarDate);
+
+      const query = searchInput.value.toLowerCase();
+      const visibleItems = datedItems.filter(item => !query || [item.task, item._appName, item.owner, item.comments, item.issues, item.dependency].some(value => String(value).toLowerCase().includes(query)));
+      const todayKey = calendarDateKey(new Date());
+
+      calendarViewButtons.forEach(button => {
+        const isActive = button.dataset.calendarView === calendarView;
+        button.classList.toggle('active', isActive);
+        button.setAttribute('aria-selected', String(isActive));
+      });
+
+      const monthFormatter = new Intl.DateTimeFormat('en-US', { month: 'long', year: 'numeric' });
+      const fullDateFormatter = new Intl.DateTimeFormat('en-US', { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' });
+      const weekStart = calendarStartOfWeek(calendarDate);
+      const weekEnd = new Date(weekStart);
+      weekEnd.setDate(weekEnd.getDate() + 6);
+
+      if (calendarView === 'day') {
+        calendarPeriodLabel.textContent = fullDateFormatter.format(calendarDate);
+        const dayItems = calendarItemsForDate(visibleItems, calendarDate);
+        calendarContent.innerHTML = `<div class="grid" style="grid-template-columns: 4rem minmax(0, 1fr)">${Array.from({ length: 24 }, (_, hour) => {
+          const slotItems = dayItems.filter(item => item._calendarDate.getHours() === hour);
+          return `<div class="calendar-grid-line calendar-muted border-b border-r px-2 py-3 text-right text-[10px] font-mono">${calendarHourLabel(hour)}</div><div class="calendar-grid-line calendar-slot border-b p-1">${slotItems.map(calendarEventCard).join('')}</div>`;
+        }).join('')}</div>`;
+        return;
+      }
+
+      if (calendarView === 'week') {
+        const weekMonthFormatter = new Intl.DateTimeFormat('en-US', { month: 'short', year: 'numeric' });
+        const weekStartLabel = weekMonthFormatter.format(weekStart);
+        const weekEndLabel = weekMonthFormatter.format(weekEnd);
+        calendarPeriodLabel.textContent = weekStartLabel === weekEndLabel ? weekStartLabel : `${weekStartLabel} - ${weekEndLabel}`;
+        const days = Array.from({ length: 7 }, (_, index) => {
+          const day = new Date(weekStart);
+          day.setDate(day.getDate() + index);
+          return day;
+        });
+        const header = `<div class="calendar-grid-line calendar-muted border-b p-2 text-center text-[10px] font-mono"></div>${days.map(day => `<div class="calendar-grid-line border-b p-2 text-center text-xs font-semibold ${calendarDateKey(day) === todayKey ? 'calendar-day-number today' : 'calendar-day-number'}">${day.toLocaleDateString('en-US', { weekday: 'short' })}<br><span class="font-mono">${day.getDate()}</span></div>`).join('')}`;
+        const rows = Array.from({ length: 24 }, (_, hour) => `<div class="calendar-grid-line calendar-muted border-b border-r px-2 py-3 text-right text-[10px] font-mono">${calendarHourLabel(hour)}</div>${days.map(day => `<div class="calendar-grid-line calendar-slot border-b p-1">${calendarItemsForDate(visibleItems, day).filter(item => item._calendarDate.getHours() === hour).map(calendarEventCard).join('')}</div>`).join('')}`).join('');
+        calendarContent.innerHTML = `<div class="calendar-week-grid grid" style="grid-template-columns: 4rem repeat(7, minmax(0, 1fr))">${header}${rows}</div>`;
+        return;
+      }
+
+      if (calendarView === 'month') {
+        calendarPeriodLabel.textContent = monthFormatter.format(calendarDate);
+        const firstDay = new Date(calendarDate.getFullYear(), calendarDate.getMonth(), 1);
+        const gridStart = calendarStartOfWeek(firstDay);
+        const weekdays = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+        const cells = Array.from({ length: 42 }, (_, index) => {
+          const day = new Date(gridStart);
+          day.setDate(day.getDate() + index);
+          const isCurrentMonth = day.getMonth() === calendarDate.getMonth();
+          const dayItems = calendarItemsForDate(visibleItems, day);
+          return `<div class="calendar-month-cell calendar-grid-line border-b border-r p-1.5 ${isCurrentMonth ? '' : 'opacity-40'}"><div class="calendar-day-number mb-1 text-right text-[11px] font-mono ${calendarDateKey(day) === todayKey ? 'today' : ''}">${day.getDate()}</div>${dayItems.slice(0, 4).map(calendarEventCard).join('')}${dayItems.length > 4 ? `<div class="calendar-muted text-[10px]">+${dayItems.length - 4} more</div>` : ''}</div>`;
+        });
+        calendarContent.innerHTML = `<div class="calendar-month-grid grid grid-cols-7"><div class="calendar-muted col-span-7 grid grid-cols-7 border-b">${weekdays.map(day => `<div class="p-2 text-center text-[10px] font-mono">${day}</div>`).join('')}</div>${cells.join('')}</div>`;
+        return;
+      }
+
+      calendarPeriodLabel.textContent = String(calendarDate.getFullYear());
+      const miniMonths = Array.from({ length: 12 }, (_, month) => {
+        const firstDay = new Date(calendarDate.getFullYear(), month, 1);
+        const gridStart = calendarStartOfWeek(firstDay);
+        const cells = Array.from({ length: 42 }, (_, index) => {
+          const day = new Date(gridStart);
+          day.setDate(day.getDate() + index);
+          const isCurrentMonth = day.getMonth() === month;
+          const hasEvents = calendarItemsForDate(visibleItems, day).length > 0;
+          return `<button data-calendar-date="${calendarDateKey(day)}" class="h-5 text-[9px] font-mono ${isCurrentMonth ? 'calendar-day-number' : 'calendar-muted'} ${hasEvents ? 'text-indigo-600 font-bold' : ''}">${isCurrentMonth ? day.getDate() : ''}</button>`;
+        }).join('');
+        return `<div class="calendar-mini-month rounded-lg p-2"><button data-calendar-month="${month}" class="mb-2 text-xs font-semibold text-indigo-600">${new Intl.DateTimeFormat('en-US', { month: 'long' }).format(firstDay)}</button><div class="grid grid-cols-7 gap-0.5 text-center">${cells}</div></div>`;
+      });
+      calendarContent.innerHTML = `<div class="calendar-year-grid grid grid-cols-4 gap-3 p-3">${miniMonths.join('')}</div>`;
+    }
+
+    function animateTableRows(previousPositions) {
+      if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+
+      tableBody.querySelectorAll('tr[data-row-id]').forEach(row => {
+        const rowId = row.dataset.rowId;
+        const currentTop = row.getBoundingClientRect().top;
+        const previousTop = previousPositions.get(rowId);
+
+        if (previousTop === undefined) {
+          row.animate(
+            [
+              { opacity: 0, transform: 'translateY(-6px)' },
+              { opacity: 1, transform: 'translateY(0)' }
+            ],
+            { duration: 180, easing: 'cubic-bezier(0.22, 1, 0.36, 1)' }
+          );
+          return;
+        }
+
+        const offset = previousTop - currentTop;
+        if (Math.abs(offset) > 1) {
+          row.animate(
+            [
+              { transform: `translateY(${offset}px)` },
+              { transform: 'translateY(0)' }
+            ],
+            { duration: 220, easing: 'cubic-bezier(0.22, 1, 0.36, 1)' }
+          );
+        }
+      });
+    }
+
+    function renderPlanner(animate = false) {
       const query = searchInput.value.toLowerCase();
       let appsToDisplay = uploadedApps;
 
@@ -669,6 +962,9 @@
 
       if (uploadedApps.length === 0 || allTasksWithApp.length === 0) {
         tableContainer.classList.add('hidden');
+        calendarContainer.classList.add('hidden');
+        calendarToolbar.classList.add('hidden');
+        calendarToolbar.classList.remove('flex');
         activeViewBanner.classList.add('hidden');
         activeViewBanner.classList.remove('flex');
         emptyState.classList.remove('hidden');
@@ -688,6 +984,24 @@
         currentViewLabel.textContent = activeAppObj ? activeAppObj.name : 'Selected Application';
       }
 
+      tableContainer.classList.toggle('hidden', plannerView !== 'table');
+      calendarContainer.classList.toggle('hidden', plannerView !== 'calendar');
+      calendarToolbar.classList.toggle('hidden', plannerView !== 'calendar');
+      calendarToolbar.classList.toggle('flex', plannerView === 'calendar');
+      openCalendarBtn.textContent = plannerView === 'calendar' ? 'Table' : 'Calendar';
+
+      if (plannerView === 'calendar') {
+        renderCalendar(allTasksWithApp);
+        return;
+      }
+
+      const previousPositions = new Map();
+      if (animate) {
+        tableBody.querySelectorAll('tr[data-row-id]').forEach(row => {
+          previousPositions.set(row.dataset.rowId, row.getBoundingClientRect().top);
+        });
+      }
+
       tableBody.innerHTML = '';
       let rowCounter = 1;
 
@@ -696,6 +1010,8 @@
         let phaseTotalDuration = 0;
         let phaseStarts = [];
         let phaseEnds = [];
+        let phaseActualStarts = [];
+        let phaseActualEnds = [];
 
         phaseGroup.subPhases.forEach(subPhaseName => {
           const matchingTasks = allTasksWithApp.filter(t => (t.subPhase || t.SubPhase) === subPhaseName);
@@ -703,27 +1019,33 @@
           matchingTasks.forEach(item => {
             if (item.start && item.start !== '-') phaseStarts.push(item.start);
             if (item.end && item.end !== '-') phaseEnds.push(item.end);
+            if (item.actualStart && item.actualStart !== '-') phaseActualStarts.push(item.actualStart);
+            if (item.actualEnd && item.actualEnd !== '-') phaseActualEnds.push(item.actualEnd);
           });
         });
 
         const earliestPhaseStart = phaseStarts.length ? phaseStarts.sort()[0] : '-';
         const latestPhaseEnd = phaseEnds.length ? phaseEnds.sort().reverse()[0] : '-';
+        const earliestPhaseActualStart = phaseActualStarts.length ? phaseActualStarts.sort()[0] : '-';
+        const latestPhaseActualEnd = phaseActualEnds.length ? phaseActualEnds.sort().reverse()[0] : '-';
 
         const phaseRowHTML = `
-          <tr onclick="toggleCollapse('${phaseGroup.phase}')" class="bg-slate-900 hover:bg-slate-850 text-white font-bold text-xs border-b-2 border-slate-900 cursor-pointer select-none transition-colors">
+          <tr data-row-id="phase-${phaseGroup.phase}" onclick="toggleCollapse('${phaseGroup.phase}')" class="bg-slate-900 hover:bg-slate-850 text-white font-bold text-xs border-b-2 border-slate-900 cursor-pointer select-none transition-colors">
             <td data-col="index" class="py-1.5 px-3 border-r border-slate-800 text-center font-mono text-indigo-400 bg-slate-950">${rowCounter++}</td>
             <td data-col="appName" class="py-1.5 px-3 border-r border-slate-800 text-[11px] text-slate-400 whitespace-nowrap">-</td>
             <td data-col="task" class="py-1.5 px-3 border-r border-slate-800">
               <div class="flex items-center space-x-2">
                 <i data-lucide="${isPhaseCollapsed ? 'chevron-right' : 'chevron-down'}" class="w-3.5 h-3.5 text-indigo-400"></i>
-                <i data-lucide="${phaseGroup.phase === 'Failover' ? 'arrow-up-right' : 'arrow-down-left'}" class="w-4 h-4 text-indigo-400"></i>
                 <span class="tracking-wide">${phaseGroup.phase}</span>
               </div>
             </td>
+            <td data-col="dependency" class="py-1.5 px-3 border-r border-slate-800 text-[11px] text-slate-400">-</td>
             <td data-col="type" class="py-1.5 px-3 border-r border-slate-800 font-mono text-[11px] text-slate-300">Phase</td>
             <td data-col="duration" class="py-1.5 px-3 border-r border-slate-800 font-mono text-indigo-300">${phaseTotalDuration} mins</td>
             <td data-col="start" class="py-1.5 px-3 border-r border-slate-800 font-mono text-[11px] text-slate-200">${earliestPhaseStart}</td>
             <td data-col="end" class="py-1.5 px-3 border-r border-slate-800 font-mono text-[11px] text-slate-200">${latestPhaseEnd}</td>
+            <td data-col="actualStart" class="py-1.5 px-3 border-r border-slate-800 font-mono text-[11px] text-slate-200">${earliestPhaseActualStart}</td>
+            <td data-col="actualEnd" class="py-1.5 px-3 border-r border-slate-800 font-mono text-[11px] text-slate-200">${latestPhaseActualEnd}</td>
             <td data-col="owner" class="py-1.5 px-3 border-r border-slate-800 text-[11px] text-slate-400">-</td>
             <td data-col="backup" class="py-1.5 px-3 border-r border-slate-800 text-[11px] text-slate-400">-</td>
             <td data-col="checker" class="py-1.5 px-3 border-r border-slate-800 text-[11px] text-slate-400">-</td>
@@ -742,16 +1064,22 @@
             const subPhaseDuration = matchingTasks.reduce((sum, item) => sum + parseDuration(item.duration), 0);
             let subPhaseStarts = [];
             let subPhaseEnds = [];
+            let subPhaseActualStarts = [];
+            let subPhaseActualEnds = [];
             matchingTasks.forEach(item => {
               if (item.start && item.start !== '-') subPhaseStarts.push(item.start);
               if (item.end && item.end !== '-') subPhaseEnds.push(item.end);
+              if (item.actualStart && item.actualStart !== '-') subPhaseActualStarts.push(item.actualStart);
+              if (item.actualEnd && item.actualEnd !== '-') subPhaseActualEnds.push(item.actualEnd);
             });
 
             const earliestSubStart = subPhaseStarts.length ? subPhaseStarts.sort()[0] : '-';
             const latestSubEnd = subPhaseEnds.length ? subPhaseEnds.sort().reverse()[0] : '-';
+            const earliestSubActualStart = subPhaseActualStarts.length ? subPhaseActualStarts.sort()[0] : '-';
+            const latestSubActualEnd = subPhaseActualEnds.length ? subPhaseActualEnds.sort().reverse()[0] : '-';
 
             const subPhaseRowHTML = `
-              <tr onclick="toggleCollapse('${subPhaseId}')" class="bg-indigo-50/40 hover:bg-indigo-50/70 border-y border-indigo-100 font-bold text-slate-800 cursor-pointer select-none transition-colors text-xs">
+              <tr data-row-id="subphase-${subPhaseId}" onclick="toggleCollapse('${subPhaseId}')" class="bg-indigo-50/40 hover:bg-indigo-50/70 border-y border-indigo-100 font-bold text-slate-800 cursor-pointer select-none transition-colors text-xs">
                 <td data-col="index" class="py-1.5 px-3 border-r border-slate-200 text-center font-mono text-indigo-600 bg-indigo-100/30">${rowCounter++}</td>
                 <td data-col="appName" class="py-1.5 px-3 border-r border-slate-200 text-slate-400 font-bold whitespace-nowrap">-</td>
                 <td data-col="task" class="py-1.5 px-3 pl-8 border-r border-slate-200">
@@ -761,10 +1089,13 @@
                     <span class="text-[10px] bg-indigo-100 text-indigo-700 font-mono px-1.5 py-0.2 rounded font-bold">(${matchingTasks.length} tasks)</span>
                   </div>
                 </td>
+                <td data-col="dependency" class="py-1.5 px-3 border-r border-slate-200 text-slate-400 font-bold">-</td>
                 <td data-col="type" class="py-1.5 px-3 border-r border-slate-200 font-mono text-[11px] text-indigo-600 font-bold">Sub Phase</td>
                 <td data-col="duration" class="py-1.5 px-3 border-r border-slate-200 font-mono font-bold text-indigo-700">${subPhaseDuration} mins</td>
                 <td data-col="start" class="py-1.5 px-3 border-r border-slate-200 font-mono text-[11px] text-indigo-900 font-bold">${earliestSubStart}</td>
                 <td data-col="end" class="py-1.5 px-3 border-r border-slate-200 font-mono text-[11px] text-indigo-900 font-bold">${latestSubEnd}</td>
+                <td data-col="actualStart" class="py-1.5 px-3 border-r border-slate-200 font-mono text-[11px] text-indigo-900 font-bold">${earliestSubActualStart}</td>
+                <td data-col="actualEnd" class="py-1.5 px-3 border-r border-slate-200 font-mono text-[11px] text-indigo-900 font-bold">${latestSubActualEnd}</td>
                 <td data-col="owner" class="py-1.5 px-3 border-r border-slate-200 text-slate-400 font-bold">-</td>
                 <td data-col="backup" class="py-1.5 px-3 border-r border-slate-200 text-slate-400 font-bold">-</td>
                 <td data-col="checker" class="py-1.5 px-3 border-r border-slate-200 text-slate-400 font-bold">-</td>
@@ -776,25 +1107,28 @@
 
             if (!isSubPhaseCollapsed) {
               matchingTasks.forEach(item => {
-                const searchMatch = !query || [item.task, item.owner, item.backup, item.checker, item.comments, item.issues, item._appName].some(val => 
+                const searchMatch = !query || [item.task, item.dependency, item.owner, item.backup, item.checker, item.comments, item.issues, item._appName].some(val => 
                   String(val).toLowerCase().includes(query)
                 );
 
                 if (searchMatch) {
                   const taskRowHTML = `
-                    <tr data-app-id="${item._appId}" data-task-id="${item.id}" class="task-row hover:bg-indigo-50/20 transition-colors border-b border-slate-100 text-xs cursor-pointer select-none">
+                    <tr data-row-id="task-${item._appId}-${item.id}" data-app-id="${item._appId}" data-task-id="${item.id}" tabindex="0" class="task-row hover:bg-indigo-50/20 transition-colors border-b border-slate-100 text-xs cursor-pointer select-none">
                       <td data-col="index" class="py-1.5 px-3 border-r border-slate-200 text-center font-mono text-slate-400 bg-slate-50/50">${rowCounter++}</td>
                       <td data-col="appName" class="py-1.5 px-3 border-r border-slate-200 font-medium text-slate-800 whitespace-nowrap">${item._appName}</td>
                       <td data-col="task" class="py-1.5 px-3 pl-6 border-r border-slate-200 text-slate-900 font-medium">${item.task}</td>
+                      <td data-col="dependency" class="py-1.5 px-3 border-r border-slate-200 text-slate-700">${item.dependency}</td>
                       <td data-col="type" class="py-1.5 px-3 border-r border-slate-200 font-mono text-[11px] text-slate-600"><span class="bg-slate-100 border border-slate-200 px-1.5 py-0.5 rounded">${item.type || 'Task'}</span></td>
                       <td data-col="duration" class="py-1.5 px-3 border-r border-slate-200 font-mono">${item.duration} mins</td>
                       <td data-col="start" class="py-1.5 px-3 border-r border-slate-200 font-mono text-slate-700">${item.start}</td>
                       <td data-col="end" class="py-1.5 px-3 border-r border-slate-200 font-mono text-slate-700">${item.end}</td>
+                      <td data-col="actualStart" class="py-1.5 px-3 border-r border-slate-200 font-mono text-slate-700">${item.actualStart}</td>
+                      <td data-col="actualEnd" class="py-1.5 px-3 border-r border-slate-200 font-mono text-slate-700">${item.actualEnd}</td>
                       <td data-col="owner" class="py-1.5 px-3 border-r border-slate-200"><span class="bg-slate-100 border border-slate-200 px-1.5 py-0.5 rounded font-mono text-[10px]">${item.owner}</span></td>
                       <td data-col="backup" class="py-1.5 px-3 border-r border-slate-200">${item.backup}</td>
                       <td data-col="checker" class="py-1.5 px-3 border-r border-slate-200">${item.checker}</td>
                       <td data-col="comments" class="py-1.5 px-3 border-r border-slate-200 text-slate-500">${item.comments}</td>
-                      <td data-col="issues" class="py-1.5 px-3">${item.issues !== '-' ? `<span class="text-red-600 bg-red-50 border border-red-200 px-1.5 py-0.5 rounded text-[10px]">${item.issues}</span>` : '-'}</td>
+                      <td data-col="issues" class="py-1.5 px-3 text-red-600">${item.issues}</td>
                     </tr>
                   `;
                   tableBody.insertAdjacentHTML('beforeend', taskRowHTML);
@@ -807,6 +1141,7 @@
 
       applyColumnVisibility();
       lucide.createIcons();
+      if (animate) animateTableRows(previousPositions);
     }
 
     // Cell Edit Routing
@@ -828,16 +1163,20 @@
         editTaskDescInput.value = task.task || '';
         editTaskDetailsInput.value = task.details || '';
         editTaskModal.classList.remove('hidden');
+        editTaskDescInput.focus();
       } else if (col === 'type') {
         editTypeSelect.value = task.type || 'Task';
         editTypeModal.classList.remove('hidden');
+        editTypeSelect.focus();
       } else if (['owner', 'backup', 'checker'].includes(col)) {
         tempSelectedOwner = task[col] || '';
         renderOwnerTeamList();
         editOwnerModal.classList.remove('hidden');
+        ownerSearchInput.focus();
       } else if (col === 'comments') {
         editCommentInput.value = task.comments !== '-' ? task.comments : '';
         editCommentModal.classList.remove('hidden');
+        editCommentInput.focus();
       }
     }
 
@@ -847,6 +1186,15 @@
       if (tr && td) {
         triggerCellEdit(td, tr.dataset.appId, tr.dataset.taskId);
       }
+    });
+
+    tableBody.addEventListener('keydown', (e) => {
+      if (e.key !== 'Enter' && e.key !== ' ') return;
+      const tr = e.target.closest('tr.task-row');
+      if (!tr) return;
+      e.preventDefault();
+      const taskCell = tr.querySelector('td[data-col="task"]');
+      triggerCellEdit(taskCell, tr.dataset.appId, tr.dataset.taskId);
     });
 
     tableBody.addEventListener('contextmenu', (e) => {
@@ -962,6 +1310,59 @@
 
     searchInput.addEventListener('input', renderPlanner);
     appSearchInput.addEventListener('input', renderSidebar);
+
+    openCalendarBtn.addEventListener('click', () => {
+      plannerView = plannerView === 'calendar' ? 'table' : 'calendar';
+      renderPlanner();
+    });
+
+    calendarViewButtons.forEach(button => {
+      button.addEventListener('click', () => {
+        plannerView = 'calendar';
+        calendarView = button.dataset.calendarView;
+        renderPlanner();
+      });
+    });
+
+    calendarTodayBtn.addEventListener('click', () => {
+      calendarDate = new Date();
+      renderPlanner();
+    });
+
+    calendarPrevBtn.addEventListener('click', () => {
+      calendarDate = new Date(calendarDate);
+      if (calendarView === 'day') calendarDate.setDate(calendarDate.getDate() - 1);
+      if (calendarView === 'week') calendarDate.setDate(calendarDate.getDate() - 7);
+      if (calendarView === 'month') calendarDate = new Date(calendarDate.getFullYear(), calendarDate.getMonth() - 1, 1);
+      if (calendarView === 'year') calendarDate = new Date(calendarDate.getFullYear() - 1, 0, 1);
+      renderPlanner();
+    });
+
+    calendarNextBtn.addEventListener('click', () => {
+      calendarDate = new Date(calendarDate);
+      if (calendarView === 'day') calendarDate.setDate(calendarDate.getDate() + 1);
+      if (calendarView === 'week') calendarDate.setDate(calendarDate.getDate() + 7);
+      if (calendarView === 'month') calendarDate = new Date(calendarDate.getFullYear(), calendarDate.getMonth() + 1, 1);
+      if (calendarView === 'year') calendarDate = new Date(calendarDate.getFullYear() + 1, 0, 1);
+      renderPlanner();
+    });
+
+    calendarContent.addEventListener('click', (event) => {
+      const monthButton = event.target.closest('[data-calendar-month]');
+      const dateButton = event.target.closest('[data-calendar-date]');
+      if (monthButton) {
+        calendarDate = new Date(calendarDate.getFullYear(), Number(monthButton.dataset.calendarMonth), 1);
+        calendarView = 'month';
+        renderPlanner();
+      } else if (dateButton) {
+        const selectedDate = parseCalendarDate(dateButton.dataset.calendarDate);
+        if (selectedDate) {
+          calendarDate = selectedDate;
+          calendarView = 'day';
+          renderPlanner();
+        }
+      }
+    });
 
     // Initial Render
     renderSidebar();
