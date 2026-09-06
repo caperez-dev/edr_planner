@@ -1,0 +1,971 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>EDR MOP & Application Planner</title>
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Lucide Icons -->
+  <script src="https://unpkg.com/lucide@latest"></script>
+  <style>
+    /* Custom scrollbars */
+    ::-webkit-scrollbar { width: 6px; height: 6px; }
+    ::-webkit-scrollbar-track { background: #f1f5f9; }
+    ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
+    ::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
+  </style>
+</head>
+<body class="bg-slate-50 text-slate-800 font-sans antialiased min-h-screen flex flex-col">
+
+  <!-- Header / Navigation -->
+  <header class="border-b border-slate-200 bg-white sticky top-0 z-30 shadow-sm">
+    <div class="max-w-[1920px] mx-auto px-6 h-16 flex items-center justify-between">
+      <div class="flex items-center space-x-3">
+        <div class="p-2 bg-indigo-50 text-indigo-600 rounded-lg border border-indigo-100">
+          <i data-lucide="layers" class="w-6 h-6"></i>
+        </div>
+        <div>
+          <h1 class="text-lg font-semibold tracking-tight text-slate-900">EDR MOP & Application Planner</h1>
+        </div>
+      </div>
+
+      <div class="flex items-center space-x-4">
+        <!-- Expand/Collapse All Controls -->
+        <div class="flex items-center border border-slate-200 rounded-md bg-slate-50 p-1 space-x-1">
+          <button id="expandAllBtn" class="px-2 py-1 text-[11px] font-medium text-slate-600 hover:text-indigo-600 hover:bg-white rounded transition-colors flex items-center space-x-1">
+            <i data-lucide="chevrons-down" class="w-3.5 h-3.5"></i>
+            <span>Expand All</span>
+          </button>
+          <span class="text-slate-300">|</span>
+          <button id="collapseAllBtn" class="px-2 py-1 text-[11px] font-medium text-slate-600 hover:text-indigo-600 hover:bg-white rounded transition-colors flex items-center space-x-1">
+            <i data-lucide="chevrons-up" class="w-3.5 h-3.5"></i>
+            <span>Collapse All</span>
+          </button>
+        </div>
+
+        <!-- Global Task Search Input -->
+        <div class="relative w-64">
+          <i data-lucide="search" class="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400"></i>
+          <input id="searchInput" type="text" placeholder="Search tasks, owners, issues..." 
+            class="w-full bg-slate-50 border border-slate-300 rounded-md pl-9 pr-4 py-1.5 text-xs text-slate-800 focus:outline-none focus:border-indigo-600 focus:bg-white transition-colors" />
+        </div>
+        
+        <button id="clearAllBtn" class="flex items-center space-x-1.5 text-xs text-slate-500 hover:text-red-600 transition-colors px-3 py-1.5 rounded-md hover:bg-slate-100">
+          <i data-lucide="trash-2" class="w-4 h-4"></i>
+          <span>Clear Plan</span>
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <!-- Main Body with Sidebar Layout -->
+  <div class="flex-1 flex max-w-[1920px] w-full mx-auto overflow-hidden">
+    
+    <!-- Left Sidebar: Applications & MOPs -->
+    <aside class="w-72 bg-white border-r border-slate-200 p-4 flex flex-col shrink-0">
+      <div class="flex items-center justify-between mb-3 pb-3 border-b border-slate-100">
+        <div>
+          <h2 class="text-xs font-bold text-slate-400 uppercase tracking-wider">Applications & MOPs</h2>
+          <p class="text-[11px] text-slate-500 mt-0.5" id="appCountText">0 Loaded</p>
+        </div>
+        <button id="openUploadModalBtn" class="bg-indigo-600 hover:bg-indigo-700 text-white p-1.5 rounded-lg text-xs font-medium flex items-center space-x-1 transition-colors shadow-sm">
+          <i data-lucide="plus" class="w-4 h-4"></i>
+          <span>Add App</span>
+        </button>
+      </div>
+
+      <!-- App Search Bar -->
+      <div class="relative mb-3">
+        <i data-lucide="search" class="w-3.5 h-3.5 absolute left-2.5 top-1/2 -translate-y-1/2 text-slate-400"></i>
+        <input id="appSearchInput" type="text" placeholder="Filter applications..." 
+          class="w-full bg-slate-50 border border-slate-200 rounded-lg pl-8 pr-3 py-1.5 text-xs text-slate-800 focus:outline-none focus:border-indigo-600 focus:bg-white transition-colors" />
+      </div>
+
+      <!-- Applications List Container -->
+      <div id="appList" class="flex-1 overflow-y-auto space-y-1.5">
+        <div id="emptyAppSidebar" class="text-center py-8 text-slate-400">
+          <i data-lucide="file-code" class="w-8 h-8 mx-auto mb-2 opacity-50"></i>
+          <p class="text-xs">No apps uploaded yet.</p>
+          <p class="text-[10px] text-slate-400 mt-1">Click "+ Add App" to import JSON.</p>
+        </div>
+      </div>
+    </aside>
+
+    <!-- Right Main Workspace -->
+    <main class="flex-1 p-6 overflow-y-auto flex flex-col gap-4 bg-slate-50">
+      
+      <!-- Workspace Active Filter Header Bar -->
+      <div id="activeViewBanner" class="hidden items-center justify-between bg-white border border-slate-200 px-4 py-2.5 rounded-xl shadow-sm">
+        <div class="flex items-center space-x-2">
+          <span class="text-xs text-slate-500 font-medium">Active View:</span>
+          <span id="currentViewLabel" class="text-xs font-bold text-indigo-600 bg-indigo-50 border border-indigo-200 px-2.5 py-1 rounded-md">All Applications</span>
+        </div>
+        <p class="text-[11px] text-slate-400">Double-click or right-click any task cell to edit details</p>
+      </div>
+
+      <!-- Empty Schedule Prompt -->
+      <div id="emptyState" class="flex-1 flex flex-col items-center justify-center py-16 text-slate-400 border border-slate-200 rounded-xl bg-white shadow-sm">
+        <i data-lucide="calendar-range" class="w-12 h-12 mb-3 stroke-[1.5] text-slate-300"></i>
+        <p class="text-sm font-medium text-slate-600">No MOP Schedule Loaded</p>
+        <p class="text-xs text-slate-400 max-w-sm text-center mt-1">Click <strong>"+ Add App"</strong> on the left panel to upload your MOP JSON file and render the execution plan.</p>
+      </div>
+
+      <!-- MOP Table View -->
+      <div id="tableContainer" class="hidden bg-white border border-slate-200 rounded-xl overflow-hidden shadow-sm flex flex-col">
+        <div class="overflow-x-auto max-h-[75vh]">
+          <table class="w-full text-left border-collapse">
+            <thead id="tableHeader" class="bg-slate-100/90 sticky top-0 z-10 border-b border-slate-200 backdrop-blur text-[11px] font-bold text-slate-600 uppercase tracking-wider select-none">
+              <tr>
+                <th data-col="index" class="py-2 px-3 border-r border-slate-200 w-14 text-center bg-slate-200/60 text-slate-500">#</th>
+                <th data-col="appName" class="py-2 px-3 border-r border-slate-200 min-w-[150px]">App Name</th>
+                <th data-col="task" class="py-2 px-3 border-r border-slate-200 min-w-[280px]">Task</th>
+                <th data-col="type" class="py-2 px-3 border-r border-slate-200 min-w-[120px]">Type</th>
+                <th data-col="duration" class="py-2 px-3 border-r border-slate-200 min-w-[110px]">Duration</th>
+                <th data-col="start" class="py-2 px-3 border-r border-slate-200 min-w-[160px]">Start</th>
+                <th data-col="end" class="py-2 px-3 border-r border-slate-200 min-w-[160px]">End</th>
+                <th data-col="owner" class="py-2 px-3 border-r border-slate-200 min-w-[120px]">Owner</th>
+                <th data-col="backup" class="py-2 px-3 border-r border-slate-200 min-w-[120px]">Backup</th>
+                <th data-col="checker" class="py-2 px-3 border-r border-slate-200 min-w-[120px]">Checker</th>
+                <th data-col="comments" class="py-2 px-3 border-r border-slate-200 min-w-[180px]">Comments</th>
+                <th data-col="issues" class="py-2 px-3 min-w-[180px]">Issues</th>
+              </tr>
+            </thead>
+            <tbody id="tableBody" class="divide-y divide-slate-100 text-xs text-slate-700">
+              <!-- Rendered Rows -->
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+    </main>
+  </div>
+
+  <!-- Context Menu for Header Columns -->
+  <div id="columnContextMenu" class="fixed z-50 bg-white border border-slate-200 rounded-xl shadow-xl py-2 w-56 text-xs hidden">
+    <div class="px-3 py-1 font-bold text-slate-400 uppercase text-[10px] tracking-wider border-b border-slate-100 pb-1.5 mb-1 flex items-center justify-between">
+      <span>Toggle Columns</span>
+      <i data-lucide="columns" class="w-3.5 h-3.5 text-slate-400"></i>
+    </div>
+    <div id="contextMenuItems" class="max-h-64 overflow-y-auto space-y-0.5 px-1">
+      <!-- Generated Menu Items -->
+    </div>
+    <div class="border-t border-slate-100 mt-1 pt-1 px-1">
+      <button id="restoreColumnsBtn" class="w-full text-left px-2.5 py-1.5 text-indigo-600 hover:bg-indigo-50 rounded font-medium flex items-center space-x-2 transition-colors">
+        <i data-lucide="rotate-ccw" class="w-3.5 h-3.5"></i>
+        <span>Restore Default State</span>
+      </button>
+    </div>
+  </div>
+
+  <!-- Modal: Upload MOP JSON -->
+  <div id="uploadModal" class="fixed inset-0 bg-slate-900/40 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
+    <div class="bg-white rounded-2xl border border-slate-200 shadow-xl max-w-md w-full p-6 space-y-4 relative">
+      <button id="closeUploadModalBtn" class="absolute top-4 right-4 text-slate-400 hover:text-slate-600 transition-colors">
+        <i data-lucide="x" class="w-5 h-5"></i>
+      </button>
+
+      <div>
+        <h3 class="text-base font-semibold text-slate-900">Upload Application MOP JSON</h3>
+        <p class="text-xs text-slate-500 mt-0.5">Select or drag your JSON files to append them to the planner.</p>
+      </div>
+
+      <div id="dropZone" class="border-2 border-dashed border-slate-300 hover:border-indigo-400 bg-slate-50 hover:bg-indigo-50/50 rounded-xl p-8 text-center transition-all cursor-pointer group">
+        <input type="file" id="fileInput" accept=".json" multiple class="hidden" />
+        <div class="flex flex-col items-center justify-center space-y-2">
+          <div class="p-3 bg-white text-slate-500 group-hover:text-indigo-600 shadow-sm rounded-full transition-all">
+            <i data-lucide="upload-cloud" class="w-6 h-6"></i>
+          </div>
+          <p class="text-xs font-medium text-slate-700">
+            Drop your MOP JSON file here, or <span class="text-indigo-600 underline decoration-indigo-400 underline-offset-4">browse</span>
+          </p>
+          <p class="text-[11px] text-slate-400">Supports single or multi-app files</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal: Edit Task -->
+  <div id="editTaskModal" class="fixed inset-0 bg-slate-900/40 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
+    <div class="bg-white rounded-2xl border border-slate-200 shadow-xl max-w-md w-full p-6 space-y-4 relative">
+      <h3 class="text-base font-semibold text-slate-900">Edit Task</h3>
+      <div class="space-y-3">
+        <div>
+          <label class="block text-xs font-semibold text-slate-600 mb-1">Description</label>
+          <input id="editTaskDescInput" type="text" class="w-full border border-slate-300 rounded-lg p-2 text-xs focus:ring-2 focus:ring-indigo-500 focus:outline-none" />
+        </div>
+        <div>
+          <label class="block text-xs font-semibold text-slate-600 mb-1">Details</label>
+          <textarea id="editTaskDetailsInput" rows="3" class="w-full border border-slate-300 rounded-lg p-2 text-xs focus:ring-2 focus:ring-indigo-500 focus:outline-none"></textarea>
+        </div>
+      </div>
+      <div class="flex justify-end space-x-2 pt-2">
+        <button id="cancelEditTaskBtn" class="px-3 py-1.5 border border-slate-300 text-slate-600 rounded-lg text-xs font-medium hover:bg-slate-50">Cancel</button>
+        <button id="saveEditTaskBtn" class="px-3 py-1.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg text-xs font-medium shadow-sm">Save</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal: Select Type -->
+  <div id="editTypeModal" class="fixed inset-0 bg-slate-900/40 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
+    <div class="bg-white rounded-2xl border border-slate-200 shadow-xl max-w-xs w-full p-5 space-y-4 relative">
+      <h3 class="text-sm font-semibold text-slate-900">Select Task Type</h3>
+      <div>
+        <select id="editTypeSelect" class="w-full border border-slate-300 rounded-lg p-2 text-xs focus:ring-2 focus:ring-indigo-500 focus:outline-none">
+          <option value="Task">Task</option>
+          <option value="Milestone">Milestone</option>
+          <option value="Test">Test</option>
+        </select>
+      </div>
+      <div class="flex justify-end space-x-2 pt-1">
+        <button id="cancelEditTypeBtn" class="px-3 py-1.5 border border-slate-300 text-slate-600 rounded-lg text-xs font-medium hover:bg-slate-50">Cancel</button>
+        <button id="saveEditTypeBtn" class="px-3 py-1.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg text-xs font-medium shadow-sm">Save</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal: Edit Owner Picker -->
+  <div id="editOwnerModal" class="fixed inset-0 bg-slate-900/40 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
+    <div class="bg-white rounded-2xl border border-slate-200 shadow-xl max-w-md w-full p-6 space-y-4 relative flex flex-col max-h-[85vh]">
+      <h3 class="text-base font-semibold text-slate-900">Select Owner</h3>
+      
+      <div class="relative">
+        <i data-lucide="search" class="w-3.5 h-3.5 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400"></i>
+        <input id="ownerSearchInput" type="text" placeholder="Search team or member name..." class="w-full bg-slate-50 border border-slate-300 rounded-lg pl-9 pr-3 py-1.5 text-xs focus:outline-none focus:border-indigo-600" />
+      </div>
+
+      <div id="ownerTeamList" class="flex-1 overflow-y-auto border border-slate-200 rounded-lg p-2 space-y-3 min-h-[200px]">
+        <!-- Rendered Teams & Members -->
+      </div>
+
+      <div class="flex justify-end space-x-2 pt-2 border-t border-slate-100">
+        <button id="cancelEditOwnerBtn" class="px-3 py-1.5 border border-slate-300 text-slate-600 rounded-lg text-xs font-medium hover:bg-slate-50">Cancel</button>
+        <button id="saveEditOwnerBtn" class="px-3 py-1.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg text-xs font-medium shadow-sm">Save</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal: Comments Pop-up -->
+  <div id="editCommentModal" class="fixed inset-0 bg-slate-900/40 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
+    <div class="bg-white rounded-2xl border border-slate-200 shadow-xl max-w-md w-full p-6 space-y-4 relative">
+      <h3 class="text-base font-semibold text-slate-900">Edit Comment</h3>
+      <div>
+        <textarea id="editCommentInput" rows="4" placeholder="Add comments here..." class="w-full border border-slate-300 rounded-lg p-2 text-xs focus:ring-2 focus:ring-indigo-500 focus:outline-none"></textarea>
+      </div>
+      <div class="flex justify-end space-x-2 pt-2">
+        <button id="cancelEditCommentBtn" class="px-3 py-1.5 border border-slate-300 text-slate-600 rounded-lg text-xs font-medium hover:bg-slate-50">Cancel</button>
+        <button id="saveEditCommentBtn" class="px-3 py-1.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg text-xs font-medium shadow-sm">Save</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    lucide.createIcons();
+
+    const TEAMS_DATA = [
+      {
+        teamName: "Infrastructure & Cloud Ops",
+        members: ["Alex Rivera", "David Chen", "Sarah Jenkins"]
+      },
+      {
+        teamName: "Database Reliability (DBA)",
+        members: ["Michael Scott", "Pam Beesly", "Jim Halpert"]
+      },
+      {
+        teamName: "Quality Assurance (QA)",
+        members: ["Dwight Schrute", "Angela Martin", "Oscar Martinez"]
+      },
+      {
+        teamName: "Security & Compliance",
+        members: ["Ryan Howard", "Kelly Kapoor"]
+      }
+    ];
+
+    // DOM Elements
+    const dropZone = document.getElementById('dropZone');
+    const fileInput = document.getElementById('fileInput');
+    const tableContainer = document.getElementById('tableContainer');
+    const tableHeader = document.getElementById('tableHeader');
+    const tableBody = document.getElementById('tableBody');
+    const emptyState = document.getElementById('emptyState');
+    const searchInput = document.getElementById('searchInput');
+    const appSearchInput = document.getElementById('appSearchInput');
+    const clearAllBtn = document.getElementById('clearAllBtn');
+    const expandAllBtn = document.getElementById('expandAllBtn');
+    const collapseAllBtn = document.getElementById('collapseAllBtn');
+    
+    const activeViewBanner = document.getElementById('activeViewBanner');
+    const currentViewLabel = document.getElementById('currentViewLabel');
+
+    // Header Column Context Menu
+    const columnContextMenu = document.getElementById('columnContextMenu');
+    const contextMenuItems = document.getElementById('contextMenuItems');
+    const restoreColumnsBtn = document.getElementById('restoreColumnsBtn');
+
+    // Modals
+    const uploadModal = document.getElementById('uploadModal');
+    const openUploadModalBtn = document.getElementById('openUploadModalBtn');
+    const closeUploadModalBtn = document.getElementById('closeUploadModalBtn');
+    const appList = document.getElementById('appList');
+    const emptyAppSidebar = document.getElementById('emptyAppSidebar');
+    const appCountText = document.getElementById('appCountText');
+
+    // Editing Modals
+    const editTaskModal = document.getElementById('editTaskModal');
+    const editTaskDescInput = document.getElementById('editTaskDescInput');
+    const editTaskDetailsInput = document.getElementById('editTaskDetailsInput');
+    const cancelEditTaskBtn = document.getElementById('cancelEditTaskBtn');
+    const saveEditTaskBtn = document.getElementById('saveEditTaskBtn');
+
+    const editTypeModal = document.getElementById('editTypeModal');
+    const editTypeSelect = document.getElementById('editTypeSelect');
+    const cancelEditTypeBtn = document.getElementById('cancelEditTypeBtn');
+    const saveEditTypeBtn = document.getElementById('saveEditTypeBtn');
+
+    const editOwnerModal = document.getElementById('editOwnerModal');
+    const ownerSearchInput = document.getElementById('ownerSearchInput');
+    const ownerTeamList = document.getElementById('ownerTeamList');
+    const cancelEditOwnerBtn = document.getElementById('cancelEditOwnerBtn');
+    const saveEditOwnerBtn = document.getElementById('saveEditOwnerBtn');
+
+    const editCommentModal = document.getElementById('editCommentModal');
+    const editCommentInput = document.getElementById('editCommentInput');
+    const cancelEditCommentBtn = document.getElementById('cancelEditCommentBtn');
+    const saveEditCommentBtn = document.getElementById('saveEditCommentBtn');
+
+    const STORAGE_KEY_APPS = 'edr_planner_uploaded_apps';
+    const STORAGE_KEY_STATES = 'edr_planner_collapsed_states';
+    const STORAGE_KEY_COLUMNS = 'edr_planner_column_visibility';
+    const STORAGE_KEY_SELECTED_APP = 'edr_planner_selected_app_id';
+
+    const COLUMNS = [
+      { id: 'index', label: '#' },
+      { id: 'appName', label: 'App Name' },
+      { id: 'task', label: 'Task' },
+      { id: 'type', label: 'Type' },
+      { id: 'duration', label: 'Duration' },
+      { id: 'start', label: 'Start' },
+      { id: 'end', label: 'End' },
+      { id: 'owner', label: 'Owner' },
+      { id: 'backup', label: 'Backup' },
+      { id: 'checker', label: 'Checker' },
+      { id: 'comments', label: 'Comments' },
+      { id: 'issues', label: 'Issues' }
+    ];
+
+    const DEFAULT_COLUMN_VISIBILITY = COLUMNS.reduce((acc, col) => {
+      acc[col.id] = true;
+      return acc;
+    }, {});
+
+    let uploadedApps = loadFromStorage(STORAGE_KEY_APPS, []);
+    let collapsedStates = loadFromStorage(STORAGE_KEY_STATES, {});
+    let columnVisibility = loadFromStorage(STORAGE_KEY_COLUMNS, DEFAULT_COLUMN_VISIBILITY);
+    let selectedAppId = loadFromStorage(STORAGE_KEY_SELECTED_APP, 'ALL');
+
+    let activeTaskRef = { appId: null, taskId: null, roleField: 'owner' };
+    let tempSelectedOwner = '';
+
+    const STRUCTURE = [
+      {
+        phase: "Failover",
+        subPhases: [
+          "Pre Failover",
+          "Failover",
+          "Failover Testing(DR)",
+          "Post Failover"
+        ]
+      },
+      {
+        phase: "Failback",
+        subPhases: [
+          "Pre Failback",
+          "Failback",
+          "Failback Testing(PROD)",
+          "Post Failback"
+        ]
+      }
+    ];
+
+    function saveToStorage(key, data) {
+      try {
+        localStorage.setItem(key, JSON.stringify(data));
+      } catch (err) {
+        console.error('Error saving data to localStorage:', err);
+      }
+    }
+
+    function loadFromStorage(key, fallback) {
+      try {
+        const item = localStorage.getItem(key);
+        return item ? JSON.parse(item) : fallback;
+      } catch (err) {
+        console.error('Error reading data from localStorage:', err);
+        return fallback;
+      }
+    }
+
+    // Modal Triggers
+    openUploadModalBtn.addEventListener('click', () => uploadModal.classList.remove('hidden'));
+    closeUploadModalBtn.addEventListener('click', () => uploadModal.classList.add('hidden'));
+    uploadModal.addEventListener('click', (e) => {
+      if (e.target === uploadModal) uploadModal.classList.add('hidden');
+    });
+
+    dropZone.addEventListener('click', () => fileInput.click());
+    dropZone.addEventListener('dragover', (e) => { e.preventDefault(); dropZone.classList.add('border-indigo-500', 'bg-indigo-50/50'); });
+    dropZone.addEventListener('dragleave', () => { dropZone.classList.remove('border-indigo-500', 'bg-indigo-50/50'); });
+    dropZone.addEventListener('drop', (e) => {
+      e.preventDefault();
+      dropZone.classList.remove('border-indigo-500', 'bg-indigo-50/50');
+      handleFiles(e.dataTransfer.files);
+    });
+    fileInput.addEventListener('change', (e) => handleFiles(e.target.files));
+
+    function handleFiles(files) {
+      Array.from(files).forEach(file => {
+        if (file.type === "application/json" || file.name.endsWith('.json')) {
+          const reader = new FileReader();
+          reader.onload = (e) => {
+            try {
+              const parsed = JSON.parse(e.target.result);
+              let appName = parsed.appName || parsed.application || parsed.name || file.name.replace('.json', '');
+              let rawTasks = Array.isArray(parsed) ? parsed : (parsed.tasks || [parsed]);
+
+              const tasks = rawTasks.map((t, idx) => ({
+                id: t.id || 't-' + Date.now() + '-' + idx + '-' + Math.random().toString(36).substr(2, 4),
+                task: t.task || t.Task || 'Unnamed Task',
+                type: t.itemType || t.Type || 'Task',
+                details: t.details || t.Details || '',
+                duration: t.duration || t.Duration || 0,
+                start: t.start || t.Start || '-',
+                end: t.end || t.End || '-',
+                owner: t.owner || t.Owner || '-',
+                backup: t.backup || t.Backup || '-',
+                checker: t.checker || t.Checker || '-',
+                comments: t.comments || t.Comments || '-',
+                issues: t.issues || t.Issues || '-',
+                subPhase: t.subPhase || t.SubPhase || t.type || 'Pre Failover'
+              }));
+
+              uploadedApps.push({
+                id: 'app-' + Date.now() + '-' + Math.random().toString(36).substr(2, 4),
+                name: appName,
+                tasks: tasks
+              });
+
+              saveToStorage(STORAGE_KEY_APPS, uploadedApps);
+              uploadModal.classList.add('hidden');
+              renderSidebar();
+              renderPlanner();
+            } catch (err) {
+              alert(`Error parsing ${file.name}: Invalid JSON structure.`);
+            }
+          };
+          reader.readAsText(file);
+        }
+      });
+    }
+
+    function removeApp(appId, event) {
+      if (event) event.stopPropagation();
+      const targetApp = uploadedApps.find(app => app.id === appId);
+      const appName = targetApp ? targetApp.name : 'this application';
+      
+      if (confirm(`Are you sure you want to remove "${appName}"?`)) {
+        uploadedApps = uploadedApps.filter(app => app.id !== appId);
+        if (selectedAppId === appId) {
+          selectedAppId = 'ALL';
+          saveToStorage(STORAGE_KEY_SELECTED_APP, selectedAppId);
+        }
+        saveToStorage(STORAGE_KEY_APPS, uploadedApps);
+        renderSidebar();
+        renderPlanner();
+      }
+    }
+
+    function selectAppFilter(appId) {
+      selectedAppId = appId;
+      saveToStorage(STORAGE_KEY_SELECTED_APP, selectedAppId);
+      renderSidebar();
+      renderPlanner();
+    }
+
+    function renderSidebar() {
+      const appQuery = appSearchInput.value.toLowerCase().trim();
+      const filteredApps = uploadedApps.filter(app => app.name.toLowerCase().includes(appQuery));
+
+      appCountText.textContent = `${uploadedApps.length} Loaded`;
+      
+      if (uploadedApps.length === 0) {
+        emptyAppSidebar.innerHTML = `
+          <i data-lucide="file-code" class="w-8 h-8 mx-auto mb-2 opacity-50"></i>
+          <p class="text-xs">No apps uploaded yet.</p>
+          <p class="text-[10px] text-slate-400 mt-1">Click "+ Add App" to import JSON.</p>
+        `;
+        emptyAppSidebar.classList.remove('hidden');
+        appList.querySelectorAll('.app-item-wrapper').forEach(el => el.remove());
+        lucide.createIcons();
+        return;
+      }
+
+      emptyAppSidebar.classList.add('hidden');
+      appList.innerHTML = '';
+
+      // Add 'All Applications' option item
+      const isAllSelected = selectedAppId === 'ALL';
+      const allItem = document.createElement('div');
+      allItem.className = `app-item-wrapper flex items-center justify-between px-3 py-2 rounded-lg cursor-pointer transition-all border ${
+        isAllSelected 
+          ? 'bg-indigo-600 text-white border-indigo-600 shadow-sm font-semibold' 
+          : 'bg-slate-100/70 hover:bg-slate-100 text-slate-700 border-slate-200'
+      }`;
+      allItem.onclick = () => selectAppFilter('ALL');
+      allItem.innerHTML = `
+        <div class="flex items-center space-x-2.5 truncate">
+          <i data-lucide="layers" class="w-4 h-4 shrink-0 ${isAllSelected ? 'text-white' : 'text-indigo-600'}"></i>
+          <span class="text-xs truncate">All Applications</span>
+        </div>
+        <span class="text-[10px] px-1.5 py-0.5 rounded ${isAllSelected ? 'bg-indigo-700 text-indigo-100' : 'bg-slate-200 text-slate-600'} font-mono">${uploadedApps.length}</span>
+      `;
+      appList.appendChild(allItem);
+
+      if (filteredApps.length === 0 && appQuery) {
+        const noMatchMsg = document.createElement('div');
+        noMatchMsg.className = 'text-xs text-slate-400 text-center py-4';
+        noMatchMsg.textContent = 'No matching applications.';
+        appList.appendChild(noMatchMsg);
+        lucide.createIcons();
+        return;
+      }
+
+      filteredApps.forEach(app => {
+        const isSelected = selectedAppId === app.id;
+        const item = document.createElement('div');
+        item.className = `app-item-wrapper flex items-center justify-between px-3 py-2 rounded-lg cursor-pointer transition-all border group ${
+          isSelected 
+            ? 'bg-indigo-50 border-indigo-300 text-indigo-900 font-semibold shadow-sm' 
+            : 'bg-white hover:border-slate-300 text-slate-700 border-slate-200'
+        }`;
+        item.onclick = () => selectAppFilter(app.id);
+        item.innerHTML = `
+          <div class="flex items-center space-x-2.5 truncate">
+            <i data-lucide="box" class="w-4 h-4 shrink-0 ${isSelected ? 'text-indigo-600' : 'text-slate-400'}"></i>
+            <span class="text-xs truncate">${app.name}</span>
+          </div>
+          <button onclick="removeApp('${app.id}', event)" title="Remove Application" class="text-slate-400 hover:text-red-500 p-1 rounded transition-colors opacity-0 group-hover:opacity-100">
+            <i data-lucide="trash-2" class="w-3.5 h-3.5"></i>
+          </button>
+        `;
+        appList.appendChild(item);
+      });
+
+      lucide.createIcons();
+    }
+
+    function parseDuration(val) {
+      if (!val) return 0;
+      const num = parseInt(val, 10);
+      return isNaN(num) ? 0 : num;
+    }
+
+    function toggleCollapse(id) {
+      collapsedStates[id] = !collapsedStates[id];
+      saveToStorage(STORAGE_KEY_STATES, collapsedStates);
+      renderPlanner();
+    }
+
+    expandAllBtn.addEventListener('click', () => {
+      collapsedStates = {};
+      saveToStorage(STORAGE_KEY_STATES, collapsedStates);
+      renderPlanner();
+    });
+
+    collapseAllBtn.addEventListener('click', () => {
+      STRUCTURE.forEach(p => {
+        collapsedStates[p.phase] = true;
+        p.subPhases.forEach(sp => collapsedStates[`${p.phase}-${sp}`] = true);
+      });
+      saveToStorage(STORAGE_KEY_STATES, collapsedStates);
+      renderPlanner();
+    });
+
+    // Column Context Menu
+    tableHeader.addEventListener('contextmenu', (e) => {
+      e.preventDefault();
+      renderContextMenu();
+      columnContextMenu.style.left = `${e.clientX}px`;
+      columnContextMenu.style.top = `${e.clientY}px`;
+      columnContextMenu.classList.remove('hidden');
+    });
+
+    document.addEventListener('click', (e) => {
+      if (!columnContextMenu.contains(e.target)) {
+        columnContextMenu.classList.add('hidden');
+      }
+    });
+
+    function renderContextMenu() {
+      contextMenuItems.innerHTML = '';
+      COLUMNS.forEach(col => {
+        // Hide appName option if not viewing ALL apps
+        if (col.id === 'appName' && selectedAppId !== 'ALL') return;
+
+        const isChecked = columnVisibility[col.id] !== false;
+        const item = document.createElement('label');
+        item.className = 'flex items-center space-x-2 px-2.5 py-1.5 hover:bg-slate-100 rounded cursor-pointer transition-colors text-slate-700 font-medium select-none';
+        item.innerHTML = `
+          <input type="checkbox" data-column="${col.id}" ${isChecked ? 'checked' : ''} class="rounded border-slate-300 text-indigo-600 focus:ring-indigo-500 w-3.5 h-3.5">
+          <span>${col.label}</span>
+        `;
+        item.querySelector('input').addEventListener('change', (e) => {
+          columnVisibility[col.id] = e.target.checked;
+          saveToStorage(STORAGE_KEY_COLUMNS, columnVisibility);
+          applyColumnVisibility();
+        });
+        contextMenuItems.appendChild(item);
+      });
+      lucide.createIcons();
+    }
+
+    restoreColumnsBtn.addEventListener('click', () => {
+      columnVisibility = { ...DEFAULT_COLUMN_VISIBILITY };
+      saveToStorage(STORAGE_KEY_COLUMNS, columnVisibility);
+      applyColumnVisibility();
+      renderContextMenu();
+    });
+
+    function applyColumnVisibility() {
+      COLUMNS.forEach(col => {
+        let isVisible = columnVisibility[col.id] !== false;
+        
+        // Conditionally show App Name ONLY when viewing "All Applications"
+        if (col.id === 'appName') {
+          isVisible = isVisible && (selectedAppId === 'ALL');
+        }
+
+        const th = tableHeader.querySelector(`th[data-col="${col.id}"]`);
+        if (th) th.style.display = isVisible ? '' : 'none';
+
+        const tds = tableBody.querySelectorAll(`td[data-col="${col.id}"]`);
+        tds.forEach(td => td.style.display = isVisible ? '' : 'none');
+      });
+    }
+
+    function renderPlanner() {
+      const query = searchInput.value.toLowerCase();
+      let appsToDisplay = uploadedApps;
+
+      if (selectedAppId !== 'ALL') {
+        appsToDisplay = uploadedApps.filter(app => app.id === selectedAppId);
+      }
+
+      let allTasksWithApp = [];
+      appsToDisplay.forEach(app => {
+        app.tasks.forEach(t => {
+          allTasksWithApp.push({ ...t, _appId: app.id, _appName: app.name });
+        });
+      });
+
+      if (uploadedApps.length === 0 || allTasksWithApp.length === 0) {
+        tableContainer.classList.add('hidden');
+        activeViewBanner.classList.add('hidden');
+        activeViewBanner.classList.remove('flex');
+        emptyState.classList.remove('hidden');
+        return;
+      }
+
+      emptyState.classList.add('hidden');
+      activeViewBanner.classList.remove('hidden');
+      activeViewBanner.classList.add('flex');
+      tableContainer.classList.remove('hidden');
+
+      // Update View Label
+      if (selectedAppId === 'ALL') {
+        currentViewLabel.textContent = `All Applications (${uploadedApps.length} Apps)`;
+      } else {
+        const activeAppObj = uploadedApps.find(a => a.id === selectedAppId);
+        currentViewLabel.textContent = activeAppObj ? activeAppObj.name : 'Selected Application';
+      }
+
+      tableBody.innerHTML = '';
+      let rowCounter = 1;
+
+      STRUCTURE.forEach(phaseGroup => {
+        const isPhaseCollapsed = !!collapsedStates[phaseGroup.phase];
+        let phaseTotalDuration = 0;
+        let phaseStarts = [];
+        let phaseEnds = [];
+
+        phaseGroup.subPhases.forEach(subPhaseName => {
+          const matchingTasks = allTasksWithApp.filter(t => (t.subPhase || t.SubPhase) === subPhaseName);
+          phaseTotalDuration += matchingTasks.reduce((sum, item) => sum + parseDuration(item.duration), 0);
+          matchingTasks.forEach(item => {
+            if (item.start && item.start !== '-') phaseStarts.push(item.start);
+            if (item.end && item.end !== '-') phaseEnds.push(item.end);
+          });
+        });
+
+        const earliestPhaseStart = phaseStarts.length ? phaseStarts.sort()[0] : '-';
+        const latestPhaseEnd = phaseEnds.length ? phaseEnds.sort().reverse()[0] : '-';
+
+        const phaseRowHTML = `
+          <tr onclick="toggleCollapse('${phaseGroup.phase}')" class="bg-slate-900 hover:bg-slate-850 text-white font-bold text-xs border-b-2 border-slate-900 cursor-pointer select-none transition-colors">
+            <td data-col="index" class="py-1.5 px-3 border-r border-slate-800 text-center font-mono text-indigo-400 bg-slate-950">${rowCounter++}</td>
+            <td data-col="appName" class="py-1.5 px-3 border-r border-slate-800 text-[11px] text-slate-400 whitespace-nowrap">-</td>
+            <td data-col="task" class="py-1.5 px-3 border-r border-slate-800">
+              <div class="flex items-center space-x-2">
+                <i data-lucide="${isPhaseCollapsed ? 'chevron-right' : 'chevron-down'}" class="w-3.5 h-3.5 text-indigo-400"></i>
+                <i data-lucide="${phaseGroup.phase === 'Failover' ? 'arrow-up-right' : 'arrow-down-left'}" class="w-4 h-4 text-indigo-400"></i>
+                <span class="tracking-wide">${phaseGroup.phase}</span>
+              </div>
+            </td>
+            <td data-col="type" class="py-1.5 px-3 border-r border-slate-800 font-mono text-[11px] text-slate-300">Phase</td>
+            <td data-col="duration" class="py-1.5 px-3 border-r border-slate-800 font-mono text-indigo-300">${phaseTotalDuration} mins</td>
+            <td data-col="start" class="py-1.5 px-3 border-r border-slate-800 font-mono text-[11px] text-slate-200">${earliestPhaseStart}</td>
+            <td data-col="end" class="py-1.5 px-3 border-r border-slate-800 font-mono text-[11px] text-slate-200">${latestPhaseEnd}</td>
+            <td data-col="owner" class="py-1.5 px-3 border-r border-slate-800 text-[11px] text-slate-400">-</td>
+            <td data-col="backup" class="py-1.5 px-3 border-r border-slate-800 text-[11px] text-slate-400">-</td>
+            <td data-col="checker" class="py-1.5 px-3 border-r border-slate-800 text-[11px] text-slate-400">-</td>
+            <td data-col="comments" class="py-1.5 px-3 border-r border-slate-800 text-[11px] text-slate-400">-</td>
+            <td data-col="issues" class="py-1.5 px-3 text-[11px] text-slate-400">-</td>
+          </tr>
+        `;
+        tableBody.insertAdjacentHTML('beforeend', phaseRowHTML);
+
+        if (!isPhaseCollapsed) {
+          phaseGroup.subPhases.forEach(subPhaseName => {
+            const subPhaseId = `${phaseGroup.phase}-${subPhaseName}`;
+            const isSubPhaseCollapsed = !!collapsedStates[subPhaseId];
+            const matchingTasks = allTasksWithApp.filter(t => (t.subPhase || t.SubPhase) === subPhaseName);
+
+            const subPhaseDuration = matchingTasks.reduce((sum, item) => sum + parseDuration(item.duration), 0);
+            let subPhaseStarts = [];
+            let subPhaseEnds = [];
+            matchingTasks.forEach(item => {
+              if (item.start && item.start !== '-') subPhaseStarts.push(item.start);
+              if (item.end && item.end !== '-') subPhaseEnds.push(item.end);
+            });
+
+            const earliestSubStart = subPhaseStarts.length ? subPhaseStarts.sort()[0] : '-';
+            const latestSubEnd = subPhaseEnds.length ? subPhaseEnds.sort().reverse()[0] : '-';
+
+            const subPhaseRowHTML = `
+              <tr onclick="toggleCollapse('${subPhaseId}')" class="bg-indigo-50/40 hover:bg-indigo-50/70 border-y border-indigo-100 font-bold text-slate-800 cursor-pointer select-none transition-colors text-xs">
+                <td data-col="index" class="py-1.5 px-3 border-r border-slate-200 text-center font-mono text-indigo-600 bg-indigo-100/30">${rowCounter++}</td>
+                <td data-col="appName" class="py-1.5 px-3 border-r border-slate-200 text-slate-400 font-bold whitespace-nowrap">-</td>
+                <td data-col="task" class="py-1.5 px-3 pl-8 border-r border-slate-200">
+                  <div class="flex items-center space-x-1.5">
+                    <i data-lucide="${isSubPhaseCollapsed ? 'chevron-right' : 'chevron-down'}" class="w-3.5 h-3.5 text-indigo-600"></i>
+                    <span class="font-bold">${subPhaseName}</span>
+                    <span class="text-[10px] bg-indigo-100 text-indigo-700 font-mono px-1.5 py-0.2 rounded font-bold">(${matchingTasks.length} tasks)</span>
+                  </div>
+                </td>
+                <td data-col="type" class="py-1.5 px-3 border-r border-slate-200 font-mono text-[11px] text-indigo-600 font-bold">Sub Phase</td>
+                <td data-col="duration" class="py-1.5 px-3 border-r border-slate-200 font-mono font-bold text-indigo-700">${subPhaseDuration} mins</td>
+                <td data-col="start" class="py-1.5 px-3 border-r border-slate-200 font-mono text-[11px] text-indigo-900 font-bold">${earliestSubStart}</td>
+                <td data-col="end" class="py-1.5 px-3 border-r border-slate-200 font-mono text-[11px] text-indigo-900 font-bold">${latestSubEnd}</td>
+                <td data-col="owner" class="py-1.5 px-3 border-r border-slate-200 text-slate-400 font-bold">-</td>
+                <td data-col="backup" class="py-1.5 px-3 border-r border-slate-200 text-slate-400 font-bold">-</td>
+                <td data-col="checker" class="py-1.5 px-3 border-r border-slate-200 text-slate-400 font-bold">-</td>
+                <td data-col="comments" class="py-1.5 px-3 border-r border-slate-200 text-slate-400 font-bold">-</td>
+                <td data-col="issues" class="py-1.5 px-3 text-slate-400 font-bold">-</td>
+              </tr>
+            `;
+            tableBody.insertAdjacentHTML('beforeend', subPhaseRowHTML);
+
+            if (!isSubPhaseCollapsed) {
+              matchingTasks.forEach(item => {
+                const searchMatch = !query || [item.task, item.owner, item.backup, item.checker, item.comments, item.issues, item._appName].some(val => 
+                  String(val).toLowerCase().includes(query)
+                );
+
+                if (searchMatch) {
+                  const taskRowHTML = `
+                    <tr data-app-id="${item._appId}" data-task-id="${item.id}" class="task-row hover:bg-indigo-50/20 transition-colors border-b border-slate-100 text-xs cursor-pointer select-none">
+                      <td data-col="index" class="py-1.5 px-3 border-r border-slate-200 text-center font-mono text-slate-400 bg-slate-50/50">${rowCounter++}</td>
+                      <td data-col="appName" class="py-1.5 px-3 border-r border-slate-200 font-medium text-slate-800 whitespace-nowrap">${item._appName}</td>
+                      <td data-col="task" class="py-1.5 px-3 pl-6 border-r border-slate-200 text-slate-900 font-medium">${item.task}</td>
+                      <td data-col="type" class="py-1.5 px-3 border-r border-slate-200 font-mono text-[11px] text-slate-600"><span class="bg-slate-100 border border-slate-200 px-1.5 py-0.5 rounded">${item.type || 'Task'}</span></td>
+                      <td data-col="duration" class="py-1.5 px-3 border-r border-slate-200 font-mono">${item.duration} mins</td>
+                      <td data-col="start" class="py-1.5 px-3 border-r border-slate-200 font-mono text-slate-700">${item.start}</td>
+                      <td data-col="end" class="py-1.5 px-3 border-r border-slate-200 font-mono text-slate-700">${item.end}</td>
+                      <td data-col="owner" class="py-1.5 px-3 border-r border-slate-200"><span class="bg-slate-100 border border-slate-200 px-1.5 py-0.5 rounded font-mono text-[10px]">${item.owner}</span></td>
+                      <td data-col="backup" class="py-1.5 px-3 border-r border-slate-200">${item.backup}</td>
+                      <td data-col="checker" class="py-1.5 px-3 border-r border-slate-200">${item.checker}</td>
+                      <td data-col="comments" class="py-1.5 px-3 border-r border-slate-200 text-slate-500">${item.comments}</td>
+                      <td data-col="issues" class="py-1.5 px-3">${item.issues !== '-' ? `<span class="text-red-600 bg-red-50 border border-red-200 px-1.5 py-0.5 rounded text-[10px]">${item.issues}</span>` : '-'}</td>
+                    </tr>
+                  `;
+                  tableBody.insertAdjacentHTML('beforeend', taskRowHTML);
+                }
+              });
+            }
+          });
+        }
+      });
+
+      applyColumnVisibility();
+      lucide.createIcons();
+    }
+
+    // Cell Edit Routing
+    function getTaskObj(appId, taskId) {
+      const app = uploadedApps.find(a => a.id === appId);
+      if (!app) return null;
+      const task = app.tasks.find(t => t.id === taskId);
+      return { app, task };
+    }
+
+    function triggerCellEdit(targetTd, appId, taskId) {
+      const col = targetTd.getAttribute('data-col');
+      const { task } = getTaskObj(appId, taskId);
+      if (!task) return;
+
+      activeTaskRef = { appId, taskId, roleField: col };
+
+      if (col === 'task') {
+        editTaskDescInput.value = task.task || '';
+        editTaskDetailsInput.value = task.details || '';
+        editTaskModal.classList.remove('hidden');
+      } else if (col === 'type') {
+        editTypeSelect.value = task.type || 'Task';
+        editTypeModal.classList.remove('hidden');
+      } else if (['owner', 'backup', 'checker'].includes(col)) {
+        tempSelectedOwner = task[col] || '';
+        renderOwnerTeamList();
+        editOwnerModal.classList.remove('hidden');
+      } else if (col === 'comments') {
+        editCommentInput.value = task.comments !== '-' ? task.comments : '';
+        editCommentModal.classList.remove('hidden');
+      }
+    }
+
+    tableBody.addEventListener('dblclick', (e) => {
+      const tr = e.target.closest('tr.task-row');
+      const td = e.target.closest('td');
+      if (tr && td) {
+        triggerCellEdit(td, tr.dataset.appId, tr.dataset.taskId);
+      }
+    });
+
+    tableBody.addEventListener('contextmenu', (e) => {
+      const tr = e.target.closest('tr.task-row');
+      const td = e.target.closest('td');
+      if (tr && td) {
+        e.preventDefault();
+        triggerCellEdit(td, tr.dataset.appId, tr.dataset.taskId);
+      }
+    });
+
+    // Save Handlers
+    saveEditTaskBtn.addEventListener('click', () => {
+      const { task } = getTaskObj(activeTaskRef.appId, activeTaskRef.taskId);
+      if (task) {
+        task.task = editTaskDescInput.value.trim() || 'Unnamed Task';
+        task.details = editTaskDetailsInput.value.trim();
+        saveToStorage(STORAGE_KEY_APPS, uploadedApps);
+        renderPlanner();
+      }
+      editTaskModal.classList.add('hidden');
+    });
+
+    saveEditTypeBtn.addEventListener('click', () => {
+      const { task } = getTaskObj(activeTaskRef.appId, activeTaskRef.taskId);
+      if (task) {
+        task.type = editTypeSelect.value;
+        saveToStorage(STORAGE_KEY_APPS, uploadedApps);
+        renderPlanner();
+      }
+      editTypeModal.classList.add('hidden');
+    });
+
+    saveEditOwnerBtn.addEventListener('click', () => {
+      const { task } = getTaskObj(activeTaskRef.appId, activeTaskRef.taskId);
+      if (task) {
+        task[activeTaskRef.roleField] = tempSelectedOwner || '-';
+        saveToStorage(STORAGE_KEY_APPS, uploadedApps);
+        renderPlanner();
+      }
+      editOwnerModal.classList.add('hidden');
+    });
+
+    saveEditCommentBtn.addEventListener('click', () => {
+      const { task } = getTaskObj(activeTaskRef.appId, activeTaskRef.taskId);
+      if (task) {
+        task.comments = editCommentInput.value.trim() || '-';
+        saveToStorage(STORAGE_KEY_APPS, uploadedApps);
+        renderPlanner();
+      }
+      editCommentModal.classList.add('hidden');
+    });
+
+    // Cancel Handlers
+    cancelEditTaskBtn.addEventListener('click', () => editTaskModal.classList.add('hidden'));
+    cancelEditTypeBtn.addEventListener('click', () => editTypeModal.classList.add('hidden'));
+    cancelEditOwnerBtn.addEventListener('click', () => editOwnerModal.classList.add('hidden'));
+    cancelEditCommentBtn.addEventListener('click', () => editCommentModal.classList.add('hidden'));
+
+    ownerSearchInput.addEventListener('input', renderOwnerTeamList);
+
+    function renderOwnerTeamList() {
+      const query = ownerSearchInput.value.toLowerCase().trim();
+      ownerTeamList.innerHTML = '';
+
+      TEAMS_DATA.forEach(team => {
+        const matchingMembers = team.members.filter(m => 
+          m.toLowerCase().includes(query) || team.teamName.toLowerCase().includes(query)
+        );
+
+        if (matchingMembers.length > 0) {
+          const group = document.createElement('div');
+          group.className = 'space-y-1';
+          
+          let membersHTML = matchingMembers.map(m => `
+            <div onclick="selectOwnerMember('${m}')" class="px-2.5 py-1.5 rounded-lg text-xs cursor-pointer flex items-center justify-between hover:bg-indigo-50 transition-colors ${tempSelectedOwner === m ? 'bg-indigo-100 text-indigo-700 font-bold' : 'text-slate-700'}">
+              <span>${m}</span>
+              ${tempSelectedOwner === m ? '<i data-lucide="check" class="w-3.5 h-3.5 text-indigo-600"></i>' : ''}
+            </div>
+          `).join('');
+
+          group.innerHTML = `
+            <div class="text-[10px] font-bold text-slate-400 uppercase tracking-wider px-2 pt-1">${team.teamName}</div>
+            <div class="space-y-0.5">${membersHTML}</div>
+          `;
+          ownerTeamList.appendChild(group);
+        }
+      });
+
+      if (ownerTeamList.children.length === 0) {
+        ownerTeamList.innerHTML = `<p class="text-xs text-slate-400 text-center py-4">No matching teams or members found.</p>`;
+      }
+      lucide.createIcons();
+    }
+
+    window.selectOwnerMember = function(member) {
+      tempSelectedOwner = member;
+      renderOwnerTeamList();
+    };
+
+    clearAllBtn.addEventListener('click', () => {
+      if (confirm('Are you sure you want to clear the entire plan? All loaded applications will be deleted.')) {
+        uploadedApps = [];
+        collapsedStates = {};
+        selectedAppId = 'ALL';
+        localStorage.removeItem(STORAGE_KEY_APPS);
+        localStorage.removeItem(STORAGE_KEY_STATES);
+        localStorage.removeItem(STORAGE_KEY_SELECTED_APP);
+        renderSidebar();
+        renderPlanner();
+      }
+    });
+
+    searchInput.addEventListener('input', renderPlanner);
+    appSearchInput.addEventListener('input', renderSidebar);
+
+    // Initial Render
+    renderSidebar();
+    renderPlanner();
+  </script>
+</body>
+</html>
