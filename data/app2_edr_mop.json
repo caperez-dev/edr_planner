@@ -1,0 +1,44 @@
+{
+  "appName": "Core Banking Engine",
+  "tasks": [
+    {
+      "task": "Freeze write traffic to primary database",
+      "type": "Task",
+      "duration": 15,
+      "start": "26 Apr 2026 10:00 AM",
+      "end": "26 Apr 2026 10:15 AM",
+      "owner": "Michael Scott",
+      "backup": "Jim Halpert",
+      "checker": "Pam Beesly",
+      "subPhase": "Pre Failover",
+      "comments": "Ensure zero active transactions before initiating cutover",
+      "issues": "-"
+    },
+    {
+      "task": "Promote DR Database Replica to Primary",
+      "type": "Task",
+      "duration": 25,
+      "start": "26 Apr 2026 10:15 AM",
+      "end": "26 Apr 2026 10:40 AM",
+      "owner": "Jim Halpert",
+      "backup": "Michael Scott",
+      "checker": "Sarah Jenkins",
+      "subPhase": "Failover",
+      "comments": "Verify replication lag reaches 0 before promoting",
+      "issues": "-"
+    },
+    {
+      "task": "Reverse replication from DR to PROD",
+      "type": "Task",
+      "duration": 45,
+      "start": "26 Apr 2026 12:00 PM",
+      "end": "26 Apr 2026 12:45 PM",
+      "owner": "David Chen",
+      "backup": "Alex Rivera",
+      "checker": "Michael Scott",
+      "subPhase": "Failback",
+      "comments": "Resync production database with changes accumulated during DR window",
+      "issues": "-"
+    }
+  ]
+}

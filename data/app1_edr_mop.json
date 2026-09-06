@@ -1,0 +1,44 @@
+{
+  "appName": "Customer Portal",
+  "tasks": [
+    {
+      "task": "Notify stakeholders of maintenance window",
+      "type": "Milestone",
+      "duration": 10,
+      "start": "26 Apr 2026 8:00 AM",
+      "end": "26 Apr 2026 8:10 AM",
+      "owner": "Ryan Howard",
+      "backup": "Kelly Kapoor",
+      "checker": "Alex Rivera",
+      "subPhase": "Pre Failover",
+      "comments": "Send broadcast via Slack and Email channels",
+      "issues": "-"
+    },
+    {
+      "task": "Redirect DNS traffic to Secondary Region",
+      "type": "Task",
+      "duration": 20,
+      "start": "26 Apr 2026 8:10 AM",
+      "end": "26 Apr 2026 8:30 AM",
+      "owner": "Alex Rivera",
+      "backup": "David Chen",
+      "checker": "Sarah Jenkins",
+      "subPhase": "Failover",
+      "comments": "Lower TTL to 60s prior to shifting traffic",
+      "issues": "-"
+    },
+    {
+      "task": "Execute DR Sanity Test Suite",
+      "type": "Test",
+      "duration": 30,
+      "start": "26 Apr 2026 8:30 AM",
+      "end": "26 Apr 2026 9:00 AM",
+      "owner": "Dwight Schrute",
+      "backup": "Angela Martin",
+      "checker": "Oscar Martinez",
+      "subPhase": "Failover Testing(DR)",
+      "comments": "Run automated regression tests against DR endpoints",
+      "issues": "Minor latency spike on auth service"
+    }
+  ]
+}
