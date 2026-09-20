@@ -18,7 +18,33 @@
       --planner-ink: #0f172a;
       --planner-line: #e2e8f0;
       --planner-accent: #4f46e5;
+      --bg-app: #f8fafc;
+      --bg-surface: #ffffff;
+      --bg-subtle: #f1f5f9;
+      --bg-elevated: #f8fafc;
+      --bg-muted: #e2e8f0;
+      --text-primary: #0f172a;
+      --text-secondary: #475569;
+      --text-tertiary: #64748b;
+      --border-soft: #e2e8f0;
+      --border-strong: #cbd5e1;
+      --shadow-soft: rgba(15, 23, 42, 0.08);
       font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    }
+
+    body.theme-dark {
+      --bg-app: #020817;
+      --bg-surface: #0f172a;
+      --bg-subtle: #111827;
+      --bg-elevated: #111827;
+      --bg-muted: #1e293b;
+      --text-primary: #e2e8f0;
+      --text-secondary: #cbd5e1;
+      --text-tertiary: #94a3b8;
+      --border-soft: #334155;
+      --border-strong: #475569;
+      --shadow-soft: rgba(2, 6, 23, 0.6);
+      color-scheme: dark;
     }
 
     html, body { min-height: 100%; }
@@ -260,6 +286,256 @@
       background: #ffffff;
       color: #0f172a;
     }
+
+    body.theme-dark {
+      background: var(--bg-app);
+      color: var(--text-primary);
+    }
+    body.theme-dark .bg-white,
+    body.theme-dark .bg-slate-50,
+    body.theme-dark .bg-slate-100\/90,
+    body.theme-dark .bg-slate-100,
+    body.theme-dark .bg-slate-200,
+    body.theme-dark .bg-slate-900\/40,
+    body.theme-dark .bg-slate-900,
+    body.theme-dark .bg-slate-950,
+    body.theme-dark .bg-indigo-50,
+    body.theme-dark .bg-indigo-100,
+    body.theme-dark .bg-indigo-50\/40,
+    body.theme-dark .bg-indigo-50\/70,
+    body.theme-dark .bg-red-50,
+    body.theme-dark .bg-slate-800,
+    body.theme-dark .calendar-toolbar,
+    body.theme-dark .calendar-mini-month,
+    body.theme-dark .calendar-surface {
+      background-color: var(--bg-surface) !important;
+    }
+    body.theme-dark .bg-slate-50,
+    body.theme-dark .bg-slate-100\/90,
+    body.theme-dark .bg-slate-100,
+    body.theme-dark .bg-slate-200 {
+      background-color: var(--bg-elevated) !important;
+    }
+    body.theme-dark .bg-slate-900\/40 {
+      background-color: rgba(2, 6, 23, 0.7) !important;
+    }
+    body.theme-dark .bg-slate-900,
+    body.theme-dark .bg-slate-950 {
+      background-color: #020817 !important;
+    }
+    body.theme-dark .bg-indigo-50,
+    body.theme-dark .bg-indigo-50\/40,
+    body.theme-dark .bg-indigo-50\/70,
+    body.theme-dark .bg-indigo-100 {
+      background-color: rgba(30, 41, 59, 0.9) !important;
+    }
+    body.theme-dark .text-slate-900,
+    body.theme-dark .text-slate-800,
+    body.theme-dark .text-slate-700,
+    body.theme-dark .text-slate-600,
+    body.theme-dark .text-slate-500,
+    body.theme-dark .text-slate-400,
+    body.theme-dark .text-slate-300,
+    body.theme-dark .text-slate-200,
+    body.theme-dark .text-slate-100,
+    body.theme-dark .text-slate-950,
+    body.theme-dark .text-indigo-900,
+    body.theme-dark .text-indigo-800,
+    body.theme-dark .text-indigo-700,
+    body.theme-dark .text-indigo-600,
+    body.theme-dark .text-indigo-500,
+    body.theme-dark * {
+      color: var(--text-primary) !important;
+    }
+    body.theme-dark .text-slate-400,
+    body.theme-dark .text-slate-500,
+    body.theme-dark .text-slate-600,
+    body.theme-dark .text-slate-700,
+    body.theme-dark .text-slate-800 {
+      color: var(--text-secondary) !important;
+    }
+    body.theme-dark .text-slate-300,
+    body.theme-dark .text-slate-400 {
+      color: var(--text-tertiary) !important;
+    }
+    body.theme-dark .border-slate-200,
+    body.theme-dark .border-slate-300,
+    body.theme-dark .border-slate-100,
+    body.theme-dark .border-slate-800,
+    body.theme-dark .border-indigo-200,
+    body.theme-dark .border-indigo-300,
+    body.theme-dark .border-slate-900,
+    body.theme-dark .calendar-toolbar,
+    body.theme-dark .calendar-mini-month,
+    body.theme-dark .calendar-grid-line,
+    body.theme-dark .calendar-month-cell,
+    body.theme-dark .calendar-day-badge,
+    body.theme-dark .custom-select,
+    body.theme-dark .border-b,
+    body.theme-dark .border-t,
+    body.theme-dark .border-r,
+    body.theme-dark .border-l,
+    body.theme-dark .divide-y > * + * {
+      border-color: var(--border-soft) !important;
+    }
+    body.theme-dark .border-slate-200,
+    body.theme-dark .border-slate-300,
+    body.theme-dark .border-slate-800,
+    body.theme-dark .border-slate-100,
+    body.theme-dark .border-indigo-200,
+    body.theme-dark .border-indigo-300 {
+      border-color: var(--border-soft) !important;
+    }
+    body.theme-dark table tr,
+    body.theme-dark thead tr,
+    body.theme-dark tbody tr,
+    body.theme-dark .divide-y > * + * {
+      border-bottom-color: var(--border-soft) !important;
+      border-top-color: var(--border-soft) !important;
+    }
+    body.theme-dark .calendar-segment,
+    body.theme-dark .calendar-nav-button,
+    body.theme-dark .freeze-column-button,
+    body.theme-dark .app-item-wrapper,
+    body.theme-dark .custom-select-shell::after {
+      border-color: var(--border-strong) !important;
+    }
+    body.theme-dark table th,
+    body.theme-dark table td,
+    body.theme-dark [data-col] {
+      border-color: var(--border-soft) !important;
+    }
+    body.theme-dark th[data-col].is-frozen,
+    body.theme-dark td[data-col].is-frozen {
+      background: rgba(15, 23, 42, 0.96) !important;
+      box-shadow: 1px 0 0 rgba(148, 163, 184, 0.7), 2px 0 10px rgba(2, 6, 23, 0.38) !important;
+    }
+    body.theme-dark thead th[data-col].is-frozen {
+      background: rgba(15, 23, 42, 0.98) !important;
+    }
+    body.theme-dark .calendar-toolbar,
+    body.theme-dark .calendar-mini-month,
+    body.theme-dark .calendar-surface,
+    body.theme-dark .custom-select,
+    body.theme-dark .bg-slate-50,
+    body.theme-dark .bg-slate-100,
+    body.theme-dark .bg-slate-200,
+    body.theme-dark .bg-white,
+    body.theme-dark .bg-slate-900 {
+      box-shadow: 0 0 0 1px rgba(148, 163, 184, 0.12) !important;
+    }
+    body.theme-dark .text-indigo-600,
+    body.theme-dark .text-indigo-500,
+    body.theme-dark .text-indigo-700,
+    body.theme-dark .text-indigo-400,
+    body.theme-dark .text-indigo-300,
+    body.theme-dark .text-indigo-200 {
+      color: #a5b4fc !important;
+    }
+    body.theme-dark .bg-indigo-600,
+    body.theme-dark .bg-indigo-700,
+    body.theme-dark .bg-indigo-500 {
+      background-color: #4f46e5 !important;
+    }
+    body.theme-dark .bg-indigo-50,
+    body.theme-dark .bg-indigo-100 {
+      background-color: rgba(30, 41, 59, 0.9) !important;
+    }
+    body.theme-dark .bg-slate-100\/90,
+    body.theme-dark .bg-slate-100,
+    body.theme-dark .bg-slate-200 {
+      background-color: rgba(15, 23, 42, 0.94) !important;
+    }
+    body.theme-dark .calendar-event,
+    body.theme-dark .calendar-event--start,
+    body.theme-dark .calendar-event--end,
+    body.theme-dark .calendar-event--actualStart,
+    body.theme-dark .calendar-event--actualEnd {
+      box-shadow: inset 0 0 0 1px rgba(148, 163, 184, 0.18);
+    }
+    body.theme-dark .custom-select {
+      background: linear-gradient(180deg, #0f172a 0%, #111827 100%);
+      color: var(--text-primary);
+    }
+    body.theme-dark .custom-select option {
+      background: #0f172a;
+      color: var(--text-primary);
+    }
+    body.theme-dark .custom-select-shell::after {
+      border-color: var(--text-tertiary);
+    }
+    body.theme-dark .calendar-grid-line {
+      border-color: var(--border-soft);
+    }
+    body.theme-dark .calendar-day-badge {
+      background: rgba(79, 70, 229, 0.14);
+      border-color: rgba(129, 140, 248, 0.6);
+      color: #e0e7ff;
+    }
+    body.theme-dark .calendar-day-number {
+      color: var(--text-secondary);
+    }
+    body.theme-dark .calendar-day-number.today {
+      color: #c7d2fe;
+    }
+    body.theme-dark .calendar-toolbar .calendar-kind-toggle {
+      background: rgba(15, 23, 42, 0.8) !important;
+      border-color: rgba(148, 163, 184, 0.35) !important;
+    }
+    body.theme-dark .calendar-kind-toggle[aria-pressed="true"] {
+      box-shadow: 0 0 0 1px rgba(148, 163, 184, 0.2);
+    }
+    body.theme-dark .calendar-nav-button {
+      background: rgba(15, 23, 42, 0.9) !important;
+      color: var(--text-secondary) !important;
+      border-color: var(--border-soft) !important;
+    }
+    body.theme-dark .calendar-nav-button:hover {
+      background: rgba(30, 41, 59, 0.96) !important;
+      color: #c7d2fe !important;
+      border-color: rgba(129, 140, 248, 0.8) !important;
+    }
+    body.theme-dark #expandAllBtn,
+    body.theme-dark #collapseAllBtn {
+      color: var(--text-secondary) !important;
+      border-color: var(--border-soft) !important;
+    }
+    body.theme-dark #expandAllBtn:hover,
+    body.theme-dark #collapseAllBtn:hover {
+      background: rgba(30, 41, 59, 0.96) !important;
+      color: #c7d2fe !important;
+      border-color: rgba(129, 140, 248, 0.8) !important;
+    }
+    body.theme-dark .freeze-column-button {
+      background: rgba(15, 23, 42, 0.9) !important;
+      color: var(--text-secondary);
+    }
+    body.theme-dark .calendar-event strong {
+      color: inherit;
+    }
+    body.theme-dark header {
+      background-color: #0f172a !important;
+      border-color: var(--border-soft) !important;
+    }
+    body.theme-dark aside,
+    body.theme-dark main,
+    body.theme-dark #tableContainer,
+    body.theme-dark #activeViewBanner,
+    body.theme-dark #emptyState,
+    body.theme-dark .app-item-wrapper,
+    body.theme-dark .owner-team-list,
+    body.theme-dark #ownerTeamList,
+    body.theme-dark .modal,
+    body.theme-dark [class*="rounded-2xl"],
+    body.theme-dark [class*="rounded-xl"] {
+      background-color: var(--bg-surface) !important;
+      border-color: var(--border-soft) !important;
+    }
+    body.theme-dark .shadow-sm,
+    body.theme-dark .shadow-xl,
+    body.theme-dark .shadow-2xl {
+      box-shadow: 0 10px 25px rgba(2, 6, 23, 0.32) !important;
+    }
   </style>
 </head>
 <body class="bg-slate-50 text-slate-800 font-sans antialiased min-h-screen flex flex-col">
@@ -275,24 +551,29 @@
       </div>
 
       <div class="flex items-center space-x-4">
+        <button id="themeToggleBtn" type="button" class="inline-flex h-9 items-center gap-2 rounded-md border border-slate-200 bg-slate-50 px-2.5 text-[11px] font-medium text-slate-600 hover:border-indigo-400 hover:text-indigo-600 transition-colors">
+          <i id="themeIcon" data-lucide="moon" class="w-3.5 h-3.5"></i>
+          <span>Night Mode</span>
+        </button>
+
         <!-- Expand/Collapse All Controls -->
-        <div class="flex items-center border border-slate-200 rounded-md bg-slate-50 p-1 space-x-1">
-          <button id="expandAllBtn" class="px-2 py-1 text-[11px] font-medium text-slate-600 hover:text-indigo-600 hover:bg-white rounded transition-colors flex items-center space-x-1">
+        <div class="flex h-9 items-center border border-slate-200 rounded-md bg-slate-50 p-1 space-x-1">
+          <button id="expandAllBtn" class="h-7 px-2 text-[11px] font-medium text-slate-600 hover:text-indigo-600 hover:bg-white rounded transition-colors flex items-center space-x-1">
             <i data-lucide="chevrons-down" class="w-3.5 h-3.5"></i>
             <span>Expand All</span>
           </button>
           <span class="text-slate-300">|</span>
-          <button id="collapseAllBtn" class="px-2 py-1 text-[11px] font-medium text-slate-600 hover:text-indigo-600 hover:bg-white rounded transition-colors flex items-center space-x-1">
+          <button id="collapseAllBtn" class="h-7 px-2 text-[11px] font-medium text-slate-600 hover:text-indigo-600 hover:bg-white rounded transition-colors flex items-center space-x-1">
             <i data-lucide="chevrons-up" class="w-3.5 h-3.5"></i>
             <span>Collapse All</span>
           </button>
         </div>
 
         <!-- Global Task Search Input -->
-        <div class="relative w-64">
+        <div class="relative w-64 h-9">
           <i data-lucide="search" class="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400"></i>
           <input id="searchInput" type="text" placeholder="Search tasks, owners, issues..." 
-            class="w-full bg-slate-50 border border-slate-300 rounded-md pl-9 pr-4 py-1.5 text-xs text-slate-800 focus:outline-none focus:border-indigo-600 focus:bg-white transition-colors" />
+            class="w-full h-9 bg-slate-50 border border-slate-300 rounded-md pl-9 pr-4 text-xs text-slate-800 focus:outline-none focus:border-indigo-600 focus:bg-white transition-colors" />
         </div>
         
         <button id="clearAllBtn" class="flex items-center space-x-1.5 text-xs text-slate-500 hover:text-red-600 transition-colors px-3 py-1.5 rounded-md hover:bg-slate-100">
@@ -663,6 +944,9 @@
     const currentViewLabel = document.getElementById('currentViewLabel');
     const openCalendarBtn = document.getElementById('openCalendarBtn');
     const exportJsonBtn = document.getElementById('exportJsonBtn');
+    const themeToggleBtn = document.getElementById('themeToggleBtn');
+    const themeIcon = document.getElementById('themeIcon');
+    const THEME_KEY = 'edr_planner_theme';
 
     // Header Column Context Menu
     const columnContextMenu = document.getElementById('columnContextMenu');
@@ -768,6 +1052,7 @@
     let calendarView = 'month';
     let calendarDate = new Date();
     let pendingConfirmAction = null;
+    let isDarkMode = localStorage.getItem(THEME_KEY) === 'dark';
     let calendarVisibleKinds = {
       start: false,
       end: true,
@@ -777,12 +1062,35 @@
 
     const editModals = [editTaskModal, editTypeModal, editDurationModal, editOwnerModal, editCommentModal, editDateTimeModal, editIssuesModal];
 
+    function applyTheme() {
+      document.body.classList.toggle('theme-dark', isDarkMode);
+      if (themeIcon) {
+        themeIcon.setAttribute('data-lucide', isDarkMode ? 'sun' : 'moon');
+      }
+      if (themeToggleBtn) {
+        themeToggleBtn.querySelector('span').textContent = isDarkMode ? 'Light Mode' : 'Night Mode';
+      }
+      lucide.createIcons();
+      try {
+        localStorage.setItem(THEME_KEY, isDarkMode ? 'dark' : 'light');
+      } catch (err) {
+        console.error('Error saving theme preference:', err);
+      }
+    }
+
+    themeToggleBtn.addEventListener('click', () => {
+      isDarkMode = !isDarkMode;
+      applyTheme();
+    });
+
     document.addEventListener('keydown', (e) => {
       if (e.key === 'Escape') {
         editModals.forEach(modal => modal.classList.add('hidden'));
         uploadModal.classList.add('hidden');
       }
     });
+
+    applyTheme();
 
     calendarKindButtons.forEach(button => {
       button.addEventListener('click', () => {
