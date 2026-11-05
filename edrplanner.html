@@ -6,1163 +6,338 @@
   <title>EDR MOP & Application Planner</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-  <!-- Tailwind CSS CDN -->
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
   <script src="https://cdn.tailwindcss.com"></script>
-  <!-- Excel export support -->
+  <script>
+    tailwind.config = { darkMode: 'class', theme: { extend: { fontFamily: { sans: ['Inter', 'sans-serif'] } } } };
+  </script>
   <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
-  <!-- Lucide Icons -->
   <script src="https://unpkg.com/lucide@latest"></script>
   <style>
-    :root {
-      --planner-ink: #0f172a;
-      --planner-line: #e2e8f0;
-      --planner-accent: #4f46e5;
-      --bg-app: #f8fafc;
-      --bg-surface: #ffffff;
-      --bg-subtle: #f1f5f9;
-      --bg-elevated: #f8fafc;
-      --bg-muted: #e2e8f0;
-      --text-primary: #0f172a;
-      --text-secondary: #475569;
-      --text-tertiary: #64748b;
-      --border-soft: #e2e8f0;
-      --border-strong: #cbd5e1;
-      --shadow-soft: rgba(15, 23, 42, 0.08);
-      font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-    }
-
-    body.theme-dark {
-      --bg-app: #020817;
-      --bg-surface: #0f172a;
-      --bg-subtle: #111827;
-      --bg-elevated: #111827;
-      --bg-muted: #1e293b;
-      --text-primary: #e2e8f0;
-      --text-secondary: #cbd5e1;
-      --text-tertiary: #94a3b8;
-      --border-soft: #334155;
-      --border-strong: #475569;
-      --shadow-soft: rgba(2, 6, 23, 0.6);
-      color-scheme: dark;
-    }
-
-    html, body { min-height: 100%; }
-    h1 { font-size: 1.125rem; line-height: 1.35; }
-    h2 { font-size: 0.75rem; line-height: 1.4; }
-    h3 { font-size: 1rem; line-height: 1.4; }
-    :where(button, input, textarea, select, [tabindex]):focus-visible {
-      outline: 2px solid var(--planner-accent);
-      outline-offset: 2px;
-    }
-    ::selection { background: #c7d2fe; color: var(--planner-ink); }
-
-    /* Custom scrollbars */
     ::-webkit-scrollbar { width: 6px; height: 6px; }
-    ::-webkit-scrollbar-track { background: #f1f5f9; }
+    ::-webkit-scrollbar-track { background: transparent; }
     ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
-    ::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
-
-    @media (max-width: 767px) {
-      header > div {
-        height: auto;
-        min-height: 4rem;
-        padding-top: 0.75rem;
-        padding-bottom: 0.75rem;
-        flex-wrap: wrap;
-        gap: 0.75rem;
-      }
-
-      header > div > div:last-child {
-        width: 100%;
-        flex-wrap: wrap;
-        gap: 0.5rem;
-      }
-
-      header .relative.w-64 {
-        flex: 1 1 12rem;
-        width: auto;
-      }
-
-      header h1 { font-size: 1rem; }
-
-      body > .flex-1.flex {
-        flex-direction: column;
-        overflow: visible;
-      }
-
-      body > .flex-1.flex > aside {
-        width: 100%;
-        max-height: 16rem;
-        border-right: 0;
-        border-bottom: 1px solid var(--planner-line);
-      }
-
-      body > .flex-1.flex > main {
-        min-height: 24rem;
-        padding: 1rem;
-        overflow: visible;
-      }
-
-      #tableContainer .overflow-x-auto { max-height: none; }
-      #activeViewBanner { align-items: flex-start; gap: 0.75rem; flex-wrap: wrap; }
-      #calendarToolbar { align-items: stretch; flex-direction: column; }
-      .calendar-week-grid { min-width: 720px; }
-      .calendar-month-grid { min-width: 620px; }
-      .calendar-year-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
-    }
-
-    .calendar-surface { color: #334155; background: #ffffff; border-color: #e2e8f0; }
-    .calendar-toolbar { background: #ffffff; border-color: #e2e8f0; }
-    .calendar-segment { color: #64748b; }
-    .calendar-segment.active { color: #ffffff; background: #4f46e5; }
-    .calendar-nav-button { color: #475569; border-color: #cbd5e1; background: #ffffff; }
-    .calendar-nav-button:hover { color: #4f46e5; border-color: #818cf8; }
-    .calendar-grid-line { border-color: #e2e8f0; }
-    .calendar-muted { color: #94a3b8; }
-    .calendar-day-number { color: #475569; }
-    .calendar-day-number.today { color: #4f46e5; }
-    .calendar-day-badge {
-      display: inline-flex;
-      align-items: center;
-      justify-content: center;
-      min-width: 1.4rem;
-      height: 1.4rem;
-      border-radius: 9999px;
-      background: #eef2ff;
-      color: #4338ca;
-      border: 1px solid rgba(79, 70, 229, 0.4);
-      box-shadow: 0 0 0 2px rgba(79, 70, 229, 0.08);
-      font-weight: 700;
-    }
-    .calendar-day-badge--start {
-      background: #f5f3ff;
-      border-color: #8b5cf6;
-      color: #4c1d95;
-      box-shadow: 0 0 0 2px rgba(139, 92, 246, 0.12);
-    }
-    .calendar-day-badge--end {
-      background: #fff7ed;
-      border-color: #f59e0b;
-      color: #9a5b00;
-      box-shadow: 0 0 0 2px rgba(245, 158, 11, 0.12);
-    }
-    .calendar-day-badge--actualStart {
-      background: #ecfdf5;
-      border-color: #10b981;
-      color: #065f46;
-      box-shadow: 0 0 0 2px rgba(16, 185, 129, 0.12);
-    }
-    .calendar-day-badge--actualEnd {
-      background: #fef2f2;
-      border-color: #ef4444;
-      color: #991b1b;
-      box-shadow: 0 0 0 2px rgba(239, 68, 68, 0.12);
-    }
-    .calendar-day-number.today .calendar-day-badge {
-      background: #4f46e5;
-      border-color: #4f46e5;
-      color: #ffffff;
-      box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.14);
-    }
-    .calendar-day-number.today .calendar-day-badge--start,
-    .calendar-day-number.today .calendar-day-badge--end,
-    .calendar-day-number.today .calendar-day-badge--actualStart,
-    .calendar-day-number.today .calendar-day-badge--actualEnd {
-      background: var(--calendar-day-badge-fill, #4f46e5);
-      border-color: var(--calendar-day-badge-fill, #4f46e5);
-      color: #ffffff;
-      box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.14);
-    }
-    .calendar-event { background: #eef2ff; border-left: 2px solid #4f46e5; color: #334155; }
-    .calendar-event--start { background: #f5f3ff; border-left-color: #8b5cf6; color: #4c1d95; }
-    .calendar-event--end { background: #fff7ed; border-left-color: #f59e0b; color: #9a5b00; }
-    .calendar-event--actualStart { background: #ecfdf5; border-left-color: #10b981; color: #065f46; }
-    .calendar-event--actualEnd { background: #fef2f2; border-left-color: #ef4444; color: #991b1b; }
-    .calendar-event strong { color: inherit; }
-    .calendar-slot { min-height: 3.5rem; }
-    .calendar-month-cell { min-height: 7rem; }
-    .calendar-mini-month { background: #ffffff; border: 1px solid #e2e8f0; }
+    .dark ::-webkit-scrollbar-thumb { background: #475569; }
 
     table { border-collapse: separate; border-spacing: 0; }
-    th[data-col], td[data-col] {
-      position: relative;
-      --freeze-bg: rgba(255, 255, 255, 0.98);
-      --freeze-edge: 1px solid rgba(148, 163, 184, 0.8);
-      --freeze-shadow: 1px 0 0 rgba(148, 163, 184, 0.75), 2px 0 8px rgba(15, 23, 42, 0.08);
-    }
-    th[data-col].is-frozen,
-    td[data-col].is-frozen {
+    th[data-col], td[data-col] { position: relative; }
+    th[data-col].is-frozen, td[data-col].is-frozen {
       position: sticky !important;
       left: var(--freeze-left, 0px) !important;
-      inset-inline-start: var(--freeze-left, 0px) !important;
-      z-index: 8;
-      background: var(--freeze-bg);
-      border-right: var(--freeze-edge);
-      box-shadow: var(--freeze-shadow);
+      z-index: 10;
+      background-color: inherit;
+      box-shadow: 2px 0 5px -1px rgba(0, 0, 0, 0.12);
     }
-    thead th[data-col].is-frozen {
-      z-index: 40;
-      background: rgba(248, 250, 252, 0.98);
-      border-right: 1px solid rgba(148, 163, 184, 0.9);
-      box-shadow: 1px 0 0 rgba(148, 163, 184, 0.9), 2px 0 8px rgba(15, 23, 42, 0.08);
-    }
-    tbody tr.bg-slate-900 td[data-col].is-frozen {
-      --freeze-bg: rgba(15, 23, 42, 0.98);
-      border-right: 1px solid rgba(148, 163, 184, 0.6);
-      box-shadow: 1px 0 0 rgba(148, 163, 184, 0.45), 2px 0 8px rgba(15, 23, 42, 0.08);
-    }
-    tbody tr.bg-indigo-50\/40 td[data-col].is-frozen {
-      --freeze-bg: rgba(238, 242, 255, 0.97);
-    }
-    .freeze-column-button {
-      position: absolute;
-      right: 4px;
-      top: 50%;
-      transform: translateY(-50%);
-      display: inline-flex;
-      align-items: center;
-      justify-content: center;
-      width: 1.2rem;
-      height: 1.2rem;
-      border-radius: 0.375rem;
-      border: 1px solid #cbd5e1;
-      background: rgba(255, 255, 255, 0.9);
-      color: #64748b;
-      opacity: 0;
-      pointer-events: none;
-      transition: opacity 0.15s ease, border-color 0.15s ease, color 0.15s ease;
-    }
-    th[data-col]:hover .freeze-column-button,
-    th[data-col].is-frozen .freeze-column-button {
-      opacity: 1;
-      pointer-events: auto;
-    }
-    .freeze-column-button:hover {
-      border-color: #818cf8;
-      color: #4338ca;
-    }
-    .freeze-column-button svg {
-      width: 0.7rem;
-      height: 0.7rem;
-    }
-    .custom-select-shell {
-      position: relative;
-    }
-    .custom-select-shell::after {
-      content: "";
-      position: absolute;
-      right: 0.9rem;
-      top: 50%;
-      width: 0.55rem;
-      height: 0.55rem;
-      border-right: 2px solid #64748b;
-      border-bottom: 2px solid #64748b;
-      transform: translateY(-65%) rotate(45deg);
-      pointer-events: none;
-    }
-    .custom-select {
-      appearance: none;
-      -webkit-appearance: none;
-      -moz-appearance: none;
-      background: linear-gradient(180deg, #ffffff 0%, #f8fafc 100%);
-      border: 1px solid #cbd5e1;
-      border-radius: 0.875rem;
-      box-shadow: 0 1px 2px rgba(15, 23, 42, 0.04);
-      color: #0f172a;
-      font-size: 0.75rem;
-      line-height: 1.4;
-      padding: 0.7rem 2.25rem 0.7rem 0.75rem;
-      width: 100%;
-      transition: border-color 0.15s ease, box-shadow 0.15s ease, background 0.15s ease;
-    }
-    .custom-select:focus {
-      border-color: #818cf8;
-      box-shadow: 0 0 0 4px rgba(79, 70, 229, 0.12);
-      outline: none;
-      background: #ffffff;
-    }
-    .custom-select option {
-      background: #ffffff;
-      color: #0f172a;
-    }
+    thead th[data-col].is-frozen { z-index: 30; background-color: #f1f5f9; }
+    .dark thead th[data-col].is-frozen { background-color: #1e293b; }
 
-    body.theme-dark {
-      background: var(--bg-app);
-      color: var(--text-primary);
+    .freeze-btn {
+      position: absolute; right: 4px; top: 50%; transform: translateY(-50%);
+      opacity: 0; transition: opacity 0.15s;
     }
-    body.theme-dark .bg-white,
-    body.theme-dark .bg-slate-50,
-    body.theme-dark .bg-slate-100\/90,
-    body.theme-dark .bg-slate-100,
-    body.theme-dark .bg-slate-200,
-    body.theme-dark .bg-slate-900\/40,
-    body.theme-dark .bg-slate-900,
-    body.theme-dark .bg-slate-950,
-    body.theme-dark .bg-indigo-50,
-    body.theme-dark .bg-indigo-100,
-    body.theme-dark .bg-indigo-50\/40,
-    body.theme-dark .bg-indigo-50\/70,
-    body.theme-dark .bg-red-50,
-    body.theme-dark .bg-slate-800,
-    body.theme-dark .calendar-toolbar,
-    body.theme-dark .calendar-mini-month,
-    body.theme-dark .calendar-surface {
-      background-color: var(--bg-surface) !important;
-    }
-    body.theme-dark .bg-slate-50,
-    body.theme-dark .bg-slate-100\/90,
-    body.theme-dark .bg-slate-100,
-    body.theme-dark .bg-slate-200 {
-      background-color: var(--bg-elevated) !important;
-    }
-    body.theme-dark .bg-slate-900\/40 {
-      background-color: rgba(2, 6, 23, 0.7) !important;
-    }
-    body.theme-dark .bg-slate-900,
-    body.theme-dark .bg-slate-950 {
-      background-color: #020817 !important;
-    }
-    body.theme-dark .bg-indigo-50,
-    body.theme-dark .bg-indigo-50\/40,
-    body.theme-dark .bg-indigo-50\/70,
-    body.theme-dark .bg-indigo-100 {
-      background-color: rgba(30, 41, 59, 0.9) !important;
-    }
-    body.theme-dark .text-slate-900,
-    body.theme-dark .text-slate-800,
-    body.theme-dark .text-slate-700,
-    body.theme-dark .text-slate-600,
-    body.theme-dark .text-slate-500,
-    body.theme-dark .text-slate-400,
-    body.theme-dark .text-slate-300,
-    body.theme-dark .text-slate-200,
-    body.theme-dark .text-slate-100,
-    body.theme-dark .text-slate-950,
-    body.theme-dark .text-indigo-900,
-    body.theme-dark .text-indigo-800,
-    body.theme-dark .text-indigo-700,
-    body.theme-dark .text-indigo-600,
-    body.theme-dark .text-indigo-500,
-    body.theme-dark * {
-      color: var(--text-primary) !important;
-    }
-    body.theme-dark .text-slate-400,
-    body.theme-dark .text-slate-500,
-    body.theme-dark .text-slate-600,
-    body.theme-dark .text-slate-700,
-    body.theme-dark .text-slate-800 {
-      color: var(--text-secondary) !important;
-    }
-    body.theme-dark .text-slate-300,
-    body.theme-dark .text-slate-400 {
-      color: var(--text-tertiary) !important;
-    }
-    body.theme-dark .border-slate-200,
-    body.theme-dark .border-slate-300,
-    body.theme-dark .border-slate-100,
-    body.theme-dark .border-slate-800,
-    body.theme-dark .border-indigo-200,
-    body.theme-dark .border-indigo-300,
-    body.theme-dark .border-slate-900,
-    body.theme-dark .calendar-toolbar,
-    body.theme-dark .calendar-mini-month,
-    body.theme-dark .calendar-grid-line,
-    body.theme-dark .calendar-month-cell,
-    body.theme-dark .calendar-day-badge,
-    body.theme-dark .custom-select,
-    body.theme-dark .border-b,
-    body.theme-dark .border-t,
-    body.theme-dark .border-r,
-    body.theme-dark .border-l,
-    body.theme-dark .divide-y > * + * {
-      border-color: var(--border-soft) !important;
-    }
-    body.theme-dark .border-slate-200,
-    body.theme-dark .border-slate-300,
-    body.theme-dark .border-slate-800,
-    body.theme-dark .border-slate-100,
-    body.theme-dark .border-indigo-200,
-    body.theme-dark .border-indigo-300 {
-      border-color: var(--border-soft) !important;
-    }
-    body.theme-dark table tr,
-    body.theme-dark thead tr,
-    body.theme-dark tbody tr,
-    body.theme-dark .divide-y > * + * {
-      border-bottom-color: var(--border-soft) !important;
-      border-top-color: var(--border-soft) !important;
-    }
-    body.theme-dark .calendar-segment,
-    body.theme-dark .calendar-nav-button,
-    body.theme-dark .freeze-column-button,
-    body.theme-dark .app-item-wrapper,
-    body.theme-dark .custom-select-shell::after {
-      border-color: var(--border-strong) !important;
-    }
-    body.theme-dark table th,
-    body.theme-dark table td,
-    body.theme-dark [data-col] {
-      border-color: var(--border-soft) !important;
-    }
-    body.theme-dark th[data-col].is-frozen,
-    body.theme-dark td[data-col].is-frozen {
-      background: rgba(15, 23, 42, 0.96) !important;
-      box-shadow: 1px 0 0 rgba(148, 163, 184, 0.7), 2px 0 10px rgba(2, 6, 23, 0.38) !important;
-    }
-    body.theme-dark thead th[data-col].is-frozen {
-      background: rgba(15, 23, 42, 0.98) !important;
-    }
-    body.theme-dark .calendar-toolbar,
-    body.theme-dark .calendar-mini-month,
-    body.theme-dark .calendar-surface,
-    body.theme-dark .custom-select,
-    body.theme-dark .bg-slate-50,
-    body.theme-dark .bg-slate-100,
-    body.theme-dark .bg-slate-200,
-    body.theme-dark .bg-white,
-    body.theme-dark .bg-slate-900 {
-      box-shadow: 0 0 0 1px rgba(148, 163, 184, 0.12) !important;
-    }
-    body.theme-dark .text-indigo-600,
-    body.theme-dark .text-indigo-500,
-    body.theme-dark .text-indigo-700,
-    body.theme-dark .text-indigo-400,
-    body.theme-dark .text-indigo-300,
-    body.theme-dark .text-indigo-200 {
-      color: #a5b4fc !important;
-    }
-    body.theme-dark .bg-indigo-600,
-    body.theme-dark .bg-indigo-700,
-    body.theme-dark .bg-indigo-500 {
-      background-color: #4f46e5 !important;
-    }
-    body.theme-dark .bg-indigo-50,
-    body.theme-dark .bg-indigo-100 {
-      background-color: rgba(30, 41, 59, 0.9) !important;
-    }
-    body.theme-dark .bg-slate-100\/90,
-    body.theme-dark .bg-slate-100,
-    body.theme-dark .bg-slate-200 {
-      background-color: rgba(15, 23, 42, 0.94) !important;
-    }
-    body.theme-dark .calendar-event,
-    body.theme-dark .calendar-event--start,
-    body.theme-dark .calendar-event--end,
-    body.theme-dark .calendar-event--actualStart,
-    body.theme-dark .calendar-event--actualEnd {
-      box-shadow: inset 0 0 0 1px rgba(148, 163, 184, 0.18);
-    }
-    body.theme-dark .custom-select {
-      background: linear-gradient(180deg, #0f172a 0%, #111827 100%);
-      color: var(--text-primary);
-    }
-    body.theme-dark .custom-select option {
-      background: #0f172a;
-      color: var(--text-primary);
-    }
-    body.theme-dark .custom-select-shell::after {
-      border-color: var(--text-tertiary);
-    }
-    body.theme-dark .calendar-grid-line {
-      border-color: var(--border-soft);
-    }
-    body.theme-dark .calendar-day-badge {
-      background: rgba(79, 70, 229, 0.14);
-      border-color: rgba(129, 140, 248, 0.6);
-      color: #e0e7ff;
-    }
-    body.theme-dark .calendar-day-number {
-      color: var(--text-secondary);
-    }
-    body.theme-dark .calendar-day-number.today {
-      color: #c7d2fe;
-    }
-    body.theme-dark .calendar-toolbar .calendar-kind-toggle {
-      background: rgba(15, 23, 42, 0.8) !important;
-      border-color: rgba(148, 163, 184, 0.35) !important;
-    }
-    body.theme-dark .calendar-kind-toggle[aria-pressed="true"] {
-      box-shadow: 0 0 0 1px rgba(148, 163, 184, 0.2);
-    }
-    body.theme-dark .calendar-nav-button {
-      background: rgba(15, 23, 42, 0.9) !important;
-      color: var(--text-secondary) !important;
-      border-color: var(--border-soft) !important;
-    }
-    body.theme-dark .calendar-nav-button:hover {
-      background: rgba(30, 41, 59, 0.96) !important;
-      color: #c7d2fe !important;
-      border-color: rgba(129, 140, 248, 0.8) !important;
-    }
-    body.theme-dark #expandAllBtn,
-    body.theme-dark #collapseAllBtn {
-      color: var(--text-secondary) !important;
-      border-color: var(--border-soft) !important;
-    }
-    body.theme-dark #expandAllBtn:hover,
-    body.theme-dark #collapseAllBtn:hover {
-      background: rgba(30, 41, 59, 0.96) !important;
-      color: #c7d2fe !important;
-      border-color: rgba(129, 140, 248, 0.8) !important;
-    }
-    body.theme-dark .freeze-column-button {
-      background: rgba(15, 23, 42, 0.9) !important;
-      color: var(--text-secondary);
-    }
-    body.theme-dark .calendar-event strong {
-      color: inherit;
-    }
-    body.theme-dark header {
-      background-color: #0f172a !important;
-      border-color: var(--border-soft) !important;
-    }
-    body.theme-dark aside,
-    body.theme-dark main,
-    body.theme-dark #tableContainer,
-    body.theme-dark #activeViewBanner,
-    body.theme-dark #emptyState,
-    body.theme-dark .app-item-wrapper,
-    body.theme-dark .owner-team-list,
-    body.theme-dark #ownerTeamList,
-    body.theme-dark .modal,
-    body.theme-dark [class*="rounded-2xl"],
-    body.theme-dark [class*="rounded-xl"] {
-      background-color: var(--bg-surface) !important;
-      border-color: var(--border-soft) !important;
-    }
-    body.theme-dark .shadow-sm,
-    body.theme-dark .shadow-xl,
-    body.theme-dark .shadow-2xl {
-      box-shadow: 0 10px 25px rgba(2, 6, 23, 0.32) !important;
-    }
+    th[data-col]:hover .freeze-btn, th[data-col].is-frozen .freeze-btn { opacity: 1; }
+
+    .cal-badge { display: inline-flex; align-items: center; justify-content: center; min-width: 1.4rem; height: 1.4rem; border-radius: 9999px; font-weight: 700; }
+    .cal-start { background: #f5f3ff; border-color: #8b5cf6; color: #4c1d95; }
+    .cal-end { background: #fff7ed; border-color: #f59e0b; color: #9a5b00; }
+    .cal-actualStart { background: #ecfdf5; border-color: #10b981; color: #065f46; }
+    .cal-actualEnd { background: #fef2f2; border-color: #ef4444; color: #991b1b; }
+    .dark .cal-start { background: rgba(139, 92, 246, 0.2); color: #ddd6fe; }
+    .dark .cal-end { background: rgba(245, 158, 11, 0.2); color: #fde68a; }
+    .dark .cal-actualStart { background: rgba(16, 185, 129, 0.2); color: #a7f3d0; }
+    .dark .cal-actualEnd { background: rgba(239, 68, 68, 0.2); color: #fecaca; }
   </style>
 </head>
-<body class="bg-slate-50 text-slate-800 font-sans antialiased min-h-screen flex flex-col">
+<body class="bg-slate-50 dark:bg-slate-950 text-slate-800 dark:text-slate-100 font-sans antialiased min-h-screen flex flex-col">
 
-  <!-- Header / Navigation -->
-  <header class="border-b border-slate-200 bg-white sticky top-0 z-30 shadow-sm">
-    <div class="max-w-[1920px] mx-auto px-6 h-16 flex items-center justify-between">
-      <div>
-        <h1 class="text-lg font-semibold tracking-tight text-slate-900 flex items-baseline gap-2">
-          <span>EDR MOP & Application Planner</span>
-          <span class="text-[10px] font-mono font-medium tracking-normal text-indigo-500">v1.0.0</span>
-        </h1>
-      </div>
+  <!-- Header -->
+  <header class="border-b border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 sticky top-0 z-30 shadow-sm">
+    <div class="w-full px-6 h-14 flex items-center justify-between gap-4 flex-wrap">
+      <h1 class="text-base font-bold tracking-tight text-slate-900 dark:text-white flex items-baseline gap-2">
+        <span>EDR MOP & Application Planner</span>
+        <span class="text-[10px] font-mono font-medium text-indigo-500">v1.0.0</span>
+      </h1>
 
-      <div class="flex items-center space-x-4">
-        <button id="themeToggleBtn" type="button" class="inline-flex h-9 items-center gap-2 rounded-md border border-slate-200 bg-slate-50 px-2.5 text-[11px] font-medium text-slate-600 hover:border-indigo-400 hover:text-indigo-600 transition-colors">
+      <div class="flex items-center gap-3 flex-wrap">
+        <button id="themeToggleBtn" type="button" class="inline-flex h-8 items-center gap-1.5 rounded-md border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 px-2.5 text-xs font-medium hover:border-indigo-400">
           <i id="themeIcon" data-lucide="moon" class="w-3.5 h-3.5"></i>
-          <span>Night Mode</span>
+          <span id="themeText">Night Mode</span>
         </button>
 
-        <!-- Expand/Collapse All Controls -->
-        <div class="flex h-9 items-center border border-slate-200 rounded-md bg-slate-50 p-1 space-x-1">
-          <button id="expandAllBtn" class="h-7 px-2 text-[11px] font-medium text-slate-600 hover:text-indigo-600 hover:bg-white rounded transition-colors flex items-center space-x-1">
-            <i data-lucide="chevrons-down" class="w-3.5 h-3.5"></i>
-            <span>Expand All</span>
+        <div class="flex h-8 items-center border border-slate-200 dark:border-slate-700 rounded-md bg-slate-50 dark:bg-slate-800 p-0.5 text-xs">
+          <button id="expandAllBtn" class="px-2 py-1 hover:text-indigo-600 dark:hover:text-indigo-400 rounded flex items-center gap-1">
+            <i data-lucide="chevrons-down" class="w-3.5 h-3.5"></i><span>Expand All</span>
           </button>
-          <span class="text-slate-300">|</span>
-          <button id="collapseAllBtn" class="h-7 px-2 text-[11px] font-medium text-slate-600 hover:text-indigo-600 hover:bg-white rounded transition-colors flex items-center space-x-1">
-            <i data-lucide="chevrons-up" class="w-3.5 h-3.5"></i>
-            <span>Collapse All</span>
+          <span class="text-slate-300 dark:text-slate-600">|</span>
+          <button id="collapseAllBtn" class="px-2 py-1 hover:text-indigo-600 dark:hover:text-indigo-400 rounded flex items-center gap-1">
+            <i data-lucide="chevrons-up" class="w-3.5 h-3.5"></i><span>Collapse All</span>
           </button>
         </div>
 
-        <!-- Global Task Search Input -->
-        <div class="relative w-64 h-9">
-          <i data-lucide="search" class="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400"></i>
-          <input id="searchInput" type="text" placeholder="Search tasks, owners, issues..." 
-            class="w-full h-9 bg-slate-50 border border-slate-300 rounded-md pl-9 pr-4 text-xs text-slate-800 focus:outline-none focus:border-indigo-600 focus:bg-white transition-colors" />
+        <div class="relative w-60">
+          <i data-lucide="search" class="w-3.5 h-3.5 absolute left-2.5 top-1/2 -translate-y-1/2 text-slate-400"></i>
+          <input id="searchInput" type="text" placeholder="Search tasks, owners, issues..."
+            class="w-full h-8 bg-slate-50 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-md pl-8 pr-3 text-xs focus:outline-none focus:border-indigo-500" />
         </div>
-        
-        <button id="clearAllBtn" class="flex items-center space-x-1.5 text-xs text-slate-500 hover:text-red-600 transition-colors px-3 py-1.5 rounded-md hover:bg-slate-100">
-          <i data-lucide="trash-2" class="w-4 h-4"></i>
-          <span>Clear Plan</span>
+
+        <button id="clearAllBtn" class="flex items-center gap-1 text-xs text-slate-500 hover:text-red-600 px-2.5 py-1.5 rounded-md hover:bg-slate-100 dark:hover:bg-slate-800">
+          <i data-lucide="trash-2" class="w-3.5 h-3.5"></i><span>Clear Plan</span>
         </button>
       </div>
     </div>
   </header>
 
-  <!-- Main Body with Sidebar Layout -->
-  <div class="flex-1 flex max-w-[1920px] w-full mx-auto overflow-hidden">
-    
-    <!-- Left Sidebar: Applications & MOPs -->
-    <aside class="w-72 bg-white border-r border-slate-200 p-4 flex flex-col shrink-0">
-      <div class="flex items-center justify-between mb-3 pb-3 border-b border-slate-100">
+  <!-- Main Layout -->
+  <div class="flex-1 flex w-full overflow-hidden flex-col md:flex-row">
+    <!-- Left Sidebar -->
+    <aside class="w-full md:w-64 bg-white dark:bg-slate-900 border-b md:border-b-0 md:border-r border-slate-200 dark:border-slate-800 p-4 flex flex-col shrink-0">
+      <div class="flex items-center justify-between mb-3 pb-2 border-b border-slate-100 dark:border-slate-800">
         <div>
-          <h2 class="text-xs font-bold text-slate-400 uppercase tracking-wider">Applications & MOPs</h2>
+          <h2 class="text-[11px] font-bold text-slate-400 uppercase tracking-wider">Applications & MOPs</h2>
           <p class="text-[11px] text-slate-500 mt-0.5" id="appCountText">0 Loaded</p>
         </div>
-        <button id="openUploadModalBtn" class="bg-indigo-600 hover:bg-indigo-700 text-white p-1.5 rounded-lg text-xs font-medium flex items-center space-x-1 transition-colors shadow-sm">
-          <i data-lucide="plus" class="w-3 h-4"></i>
-          <span class="">Add App</span>
+        <button id="openUploadModalBtn" class="bg-indigo-600 hover:bg-indigo-700 text-white px-2.5 py-1.5 rounded-lg text-xs font-medium shadow-sm">
+          <span>Add App</span>
         </button>
       </div>
 
-      <!-- App Search Bar -->
       <div class="relative mb-3">
         <i data-lucide="search" class="w-3.5 h-3.5 absolute left-2.5 top-1/2 -translate-y-1/2 text-slate-400"></i>
-        <input id="appSearchInput" type="text" placeholder="Filter applications..." 
-          class="w-full bg-slate-50 border border-slate-200 rounded-lg pl-8 pr-3 py-1.5 text-xs text-slate-800 focus:outline-none focus:border-indigo-600 focus:bg-white transition-colors" />
+        <input id="appSearchInput" type="text" placeholder="Filter applications..."
+          class="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg pl-8 pr-3 py-1.5 text-xs focus:outline-none focus:border-indigo-500" />
       </div>
 
-      <!-- Applications List Container -->
-      <div id="appList" class="flex-1 overflow-y-auto space-y-1.5">
-        <div id="emptyAppSidebar" class="text-center py-8 text-slate-400">
-          <i data-lucide="file-code" class="w-8 h-8 mx-auto mb-2 opacity-50"></i>
-          <p class="text-xs">No apps uploaded yet.</p>
-          <p class="text-[10px] text-slate-400 mt-1">Click "+ Add App" to import JSON.</p>
-        </div>
-      </div>
+      <div id="appList" class="flex-1 overflow-y-auto space-y-1"></div>
     </aside>
 
-    <!-- Right Main Workspace -->
-    <main class="flex-1 p-6 overflow-y-auto flex flex-col gap-4 bg-slate-50">
-      
-      <!-- Workspace Active Filter Header Bar -->
-      <div id="activeViewBanner" class="hidden items-center justify-between bg-white border border-slate-200 px-4 py-2.5 rounded-xl shadow-sm">
-        <div class="flex items-center space-x-2">
-          <span class="text-xs text-slate-500 font-medium">Active View:</span>
-          <span id="currentViewLabel" class="text-xs font-bold text-indigo-600 bg-indigo-50 border border-indigo-200 px-2.5 py-1 rounded-md">All Applications</span>
+    <!-- Main Content -->
+    <main class="flex-1 min-w-0 p-4 md:p-6 overflow-y-auto flex flex-col gap-4">
+      <!-- Top Banner Row: Separate Settings Wrapper + Active View Wrapper -->
+      <div id="topBannerRow" class="hidden items-stretch gap-3 flex-wrap">
+        <div class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 px-3.5 py-2.5 rounded-xl shadow-sm flex items-center">
+          <button id="openSettingsBtn" type="button" class="inline-flex items-center gap-1.5 text-xs font-semibold text-slate-700 dark:text-slate-200 hover:text-indigo-600 dark:hover:text-indigo-400">
+            <i data-lucide="settings" class="w-4 h-4 text-indigo-600 dark:text-indigo-400"></i>
+            <span>Settings</span>
+          </button>
         </div>
-        <div class="flex items-center gap-3">
-          <p class="text-[11px] text-slate-400">Double-click or right-click any task cell to edit details</p>
-          <button id="exportJsonBtn" class="rounded-md border border-slate-300 bg-indigo-50 px-2.5 py-1 text-[11px] font-semibold text-indigo-700 hover:border-indigo-400 hover:bg-indigo-100">Export</button>
-          <button id="openCalendarBtn" class="rounded-md border border-slate-300 px-2.5 py-1 text-[11px] font-semibold text-slate-600 hover:border-indigo-400 hover:text-indigo-600">Calendar</button>
+
+        <div id="activeViewBanner" class="flex-1 min-w-0 flex items-center justify-between bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 px-4 py-2.5 rounded-xl shadow-sm flex-wrap gap-3">
+          <div class="flex items-center gap-2.5 min-w-0 flex-wrap">
+            <span class="text-xs text-slate-500 font-medium">Active View:</span>
+            <span id="currentViewLabel" class="text-xs font-bold text-indigo-600 dark:text-indigo-400">All Applications</span>
+            <div id="activeAppMeta" class="flex items-center gap-2 text-xs text-slate-500 min-w-0"></div>
+          </div>
+          <div class="flex items-center gap-2.5 flex-wrap">
+            <p id="editHint" class="text-[11px] text-slate-400 hidden xl:block">Double-click or right-click any task cell to edit</p>
+            <button id="exportJsonBtn" class="rounded-md border border-indigo-200 dark:border-indigo-800 bg-indigo-50 dark:bg-indigo-950/60 px-2.5 py-1 text-xs font-semibold text-indigo-700 dark:text-indigo-300 hover:bg-indigo-100">Export</button>
+            <button id="toggleTimelineBtn" type="button" class="rounded-md border px-2.5 py-1 text-xs font-semibold transition-colors">Timeline</button>
+            <div class="flex items-center rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-100 dark:bg-slate-800 p-0.5 text-xs" role="tablist">
+              <button type="button" data-planner-view="table" class="px-2.5 py-1 rounded-md font-semibold transition-colors">Table</button>
+              <button type="button" data-planner-view="calendar" class="px-2.5 py-1 rounded-md font-semibold transition-colors">Calendar</button>
+            </div>
+          </div>
         </div>
       </div>
 
-      <!-- Calendar View Controls -->
-      <div id="calendarToolbar" class="hidden items-center justify-between gap-3 rounded-xl border px-3 py-2 calendar-toolbar">
-        <div class="flex items-center gap-2">
-          <button id="calendarTodayBtn" class="calendar-nav-button rounded-md border px-3 py-1.5 text-xs font-semibold transition-colors">Today</button>
-          <button id="calendarPrevBtn" aria-label="Previous period" class="calendar-nav-button rounded-md border p-1.5 transition-colors">
-            <i data-lucide="chevron-left" class="w-4 h-4"></i>
-          </button>
-          <button id="calendarNextBtn" aria-label="Next period" class="calendar-nav-button rounded-md border p-1.5 transition-colors">
-            <i data-lucide="chevron-right" class="w-4 h-4"></i>
-          </button>
-          <strong id="calendarPeriodLabel" class="ml-1 text-sm text-slate-700"></strong>
+      <!-- Calendar Toolbar -->
+      <div id="calendarToolbar" class="hidden items-center justify-between gap-3 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 px-3 py-2 flex-wrap">
+        <div class="flex items-center gap-1.5">
+          <button id="calendarTodayBtn" class="rounded-md border border-slate-300 dark:border-slate-700 px-2.5 py-1 text-xs font-semibold hover:border-indigo-400">Today</button>
+          <button id="calendarPrevBtn" class="rounded-md border border-slate-300 dark:border-slate-700 p-1 hover:border-indigo-400"><i data-lucide="chevron-left" class="w-4 h-4"></i></button>
+          <button id="calendarNextBtn" class="rounded-md border border-slate-300 dark:border-slate-700 p-1 hover:border-indigo-400"><i data-lucide="chevron-right" class="w-4 h-4"></i></button>
+          <strong id="calendarPeriodLabel" class="ml-1 text-sm"></strong>
         </div>
         <div class="flex items-center gap-2 flex-wrap">
-          <div class="flex items-center gap-1.5 text-[10px] text-slate-600">
-            <button type="button" data-calendar-kind="start" class="calendar-kind-toggle inline-flex items-center gap-1 rounded px-1.5 py-1 transition-colors border border-violet-200 bg-violet-50 text-violet-700" aria-pressed="false">
-              <span class="inline-block w-2.5 h-2.5 rounded-full bg-violet-500"></span>Planned Start
-            </button>
-            <button type="button" data-calendar-kind="end" class="calendar-kind-toggle inline-flex items-center gap-1 rounded px-1.5 py-1 transition-colors border border-amber-200 bg-amber-50 text-amber-700" aria-pressed="true">
-              <span class="inline-block w-2.5 h-2.5 rounded-full bg-amber-500"></span>Planned End
-            </button>
-            <button type="button" data-calendar-kind="actualStart" class="calendar-kind-toggle inline-flex items-center gap-1 rounded px-1.5 py-1 transition-colors border border-emerald-200 bg-emerald-50 text-emerald-700" aria-pressed="false">
-              <span class="inline-block w-2.5 h-2.5 rounded-full bg-emerald-500"></span>Actual Start
-            </button>
-            <button type="button" data-calendar-kind="actualEnd" class="calendar-kind-toggle inline-flex items-center gap-1 rounded px-1.5 py-1 transition-colors border border-red-200 bg-red-50 text-red-700" aria-pressed="false">
-              <span class="inline-block w-2.5 h-2.5 rounded-full bg-red-500"></span>Actual End
-            </button>
+          <div class="flex items-center gap-1 text-[10px]">
+            <button type="button" data-calendar-kind="start" class=" inline-flex items-center gap-1 rounded px-2 py-1 border border-violet-300 bg-violet-50 dark:bg-violet-950/50 text-violet-700 dark:text-violet-300"><span class="w-2 h-2 rounded-full bg-violet-500"></span>Planned Start</button>
+            <button type="button" data-calendar-kind="end" class="inline-flex items-center gap-1 rounded px-2 py-1 border border-amber-300 bg-amber-50 dark:bg-amber-950/50 text-amber-700 dark:text-amber-300"><span class="w-2 h-2 rounded-full bg-amber-500"></span>Planned End</button>
+            <button type="button" data-calendar-kind="actualStart" class="inline-flex items-center gap-1 rounded px-2 py-1 border border-emerald-300 bg-emerald-50 dark:bg-emerald-950/50 text-emerald-700 dark:text-emerald-300"><span class="w-2 h-2 rounded-full bg-emerald-500"></span>Actual Start</button>
+            <button type="button" data-calendar-kind="actualEnd" class="inline-flex items-center gap-1 rounded px-2 py-1 border border-red-300 bg-red-50 dark:bg-red-950/50 text-red-700 dark:text-red-300"><span class="w-2 h-2 rounded-full bg-red-500"></span>Actual End</button>
           </div>
-          <div class="flex items-center rounded-md border border-slate-200 bg-slate-50 p-1" role="tablist" aria-label="Calendar view">
-            <button data-calendar-view="day" role="tab" class="calendar-segment rounded px-2.5 py-1 text-[11px] font-semibold transition-colors">Day</button>
-            <button data-calendar-view="week" role="tab" class="calendar-segment rounded px-2.5 py-1 text-[11px] font-semibold transition-colors">Week</button>
-            <button data-calendar-view="month" role="tab" class="calendar-segment rounded px-2.5 py-1 text-[11px] font-semibold transition-colors">Month</button>
-            <button data-calendar-view="year" role="tab" class="calendar-segment rounded px-2.5 py-1 text-[11px] font-semibold transition-colors">Year</button>
+          <div class="flex items-center rounded-md border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 p-0.5 text-xs">
+            <button data-calendar-view="day" class="rounded px-2 py-1 font-semibold">Day</button>
+            <button data-calendar-view="week" class="rounded px-2 py-1 font-semibold">Week</button>
+            <button data-calendar-view="month" class="rounded px-2 py-1 font-semibold">Month</button>
+            <button data-calendar-view="year" class="rounded px-2 py-1 font-semibold">Year</button>
           </div>
         </div>
       </div>
 
-      <!-- Empty Schedule Prompt -->
-      <div id="emptyState" class="flex-1 flex flex-col items-center justify-center py-16 text-slate-400 border border-slate-200 rounded-xl bg-white shadow-sm">
-        <i data-lucide="calendar-range" class="w-12 h-12 mb-3 stroke-[1.5] text-slate-300"></i>
-        <p class="text-sm font-medium text-slate-600">No MOP Schedule Loaded</p>
-        <p class="text-xs text-slate-400 max-w-sm text-center mt-1">Click <strong>"+ Add App"</strong> on the left panel to upload your MOP JSON file and render the execution plan.</p>
+      <!-- Empty State -->
+      <div id="emptyState" class="flex-1 flex flex-col items-center justify-center py-16 text-slate-400 border border-slate-200 dark:border-slate-800 rounded-xl bg-white dark:bg-slate-900 shadow-sm">
+        <i data-lucide="calendar-range" class="w-10 h-10 mb-2 stroke-[1.5]"></i>
+        <p class="text-sm font-medium text-slate-600 dark:text-slate-300">No MOP Schedule Loaded</p>
+        <p class="text-xs text-slate-400 max-w-sm text-center mt-1">Click <strong>"+ Add App"</strong> on the left panel to upload your MOP JSON file.</p>
       </div>
 
-      <!-- MOP Table View -->
-      <div id="tableContainer" class="hidden bg-white border border-slate-200 rounded-xl overflow-hidden shadow-sm flex flex-col">
-        <div class="overflow-x-auto max-h-[75vh]">
-          <table class="w-full text-left border-collapse">
-            <thead id="tableHeader" class="bg-slate-100/90 sticky top-0 z-10 border-b border-slate-200 backdrop-blur text-[11px] font-bold text-slate-600 uppercase tracking-wider select-none">
-              <tr>
-                <th data-col="index" class="py-2 px-3 border-r border-slate-200 w-14 text-center bg-slate-200/60 text-slate-500">#</th>
-                <th data-col="appName" class="py-2 px-3 border-r border-slate-200 min-w-[150px]">App Name</th>
-                <th data-col="task" class="py-2 px-3 border-r border-slate-200 min-w-[280px]">Task</th>
-                <th data-col="dependency" class="py-2 px-3 border-r border-slate-200 min-w-[180px]">Dependency</th>
-                <th data-col="type" class="py-2 px-3 border-r border-slate-200 min-w-[120px]">Type</th>
-                <th data-col="duration" class="py-2 px-3 border-r border-slate-200 min-w-[110px]">Duration</th>
-                <th data-col="start" class="py-2 px-3 border-r border-slate-200 min-w-[160px]">PLANNED START</th>
-                <th data-col="end" class="py-2 px-3 border-r border-slate-200 min-w-[160px]">PLANNED END</th>
-                <th data-col="actualStart" class="py-2 px-3 border-r border-slate-200 min-w-[160px]">Actual Start</th>
-                <th data-col="actualEnd" class="py-2 px-3 border-r border-slate-200 min-w-[160px]">Actual End</th>
-                <th data-col="owner" class="py-2 px-3 border-r border-slate-200 min-w-[120px]">Owner</th>
-                <th data-col="backup" class="py-2 px-3 border-r border-slate-200 min-w-[120px]">Backup</th>
-                <th data-col="checker" class="py-2 px-3 border-r border-slate-200 min-w-[120px]">Checker</th>
-                <th data-col="comments" class="py-2 px-3 border-r border-slate-200 min-w-[180px]">Comments</th>
-                <th data-col="issues" class="py-2 px-3 min-w-[180px]">Issues</th>
-              </tr>
-            </thead>
-            <tbody id="tableBody" class="divide-y divide-slate-100 text-xs text-slate-700">
-              <!-- Rendered Rows -->
-            </tbody>
-          </table>
+      <!-- Side-by-Side Table (75%) & Timeline (25%) Workspace -->
+      <div id="tableWorkspace" class="hidden w-full gap-3 items-start">
+        <!-- Table Section -->
+        <div id="tableContainer" class="w-3/4 min-w-0 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl overflow-hidden shadow-sm flex flex-col">
+          <div id="tableScroll" class="overflow-x-scroll overflow-y-auto max-h-[75vh]">
+            <table class="w-full text-left">
+              <thead id="tableHeader" class="bg-slate-100 dark:bg-slate-800 sticky top-0 z-20 text-[11px] font-bold text-slate-600 dark:text-slate-300 uppercase tracking-wider select-none">
+                <tr id="headerRow" class="h-14"></tr>
+              </thead>
+              <tbody id="tableBody" class="text-xs"></tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- Timeline Section (25% Width Beside Table, Row-Aligned) -->
+        <div id="timelineContainer" class="hidden w-1/4 shrink-0 min-w-0 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl overflow-hidden shadow-sm flex-col">
+          <div id="timelineScroll" class="overflow-x-scroll overflow-y-auto max-h-[75vh]">
+            <table id="timelineTable" class="w-max min-w-full text-left"></table>
+          </div>
         </div>
       </div>
 
       <!-- Calendar View -->
-      <div id="calendarContainer" class="hidden rounded-xl border overflow-auto shadow-sm calendar-surface">
+      <div id="calendarContainer" class="hidden rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 overflow-auto shadow-sm">
         <div id="calendarContent" class="min-w-0"></div>
       </div>
-
     </main>
   </div>
 
-  <!-- Context Menu for Header Columns -->
-  <div id="columnContextMenu" class="fixed z-50 bg-white border border-slate-200 rounded-xl shadow-xl py-2 w-56 text-xs hidden">
-    <div class="px-3 py-1 font-bold text-slate-400 uppercase text-[10px] tracking-wider border-b border-slate-100 pb-1.5 mb-1 flex items-center justify-between">
-      <span>Toggle Columns</span>
-      <i data-lucide="columns" class="w-3.5 h-3.5 text-slate-400"></i>
+  <!-- Column Visibility Context Menu -->
+  <div id="columnContextMenu" class="fixed z-50 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl shadow-xl py-2 w-52 text-xs hidden">
+    <div class="px-3 py-1 font-bold text-slate-400 uppercase text-[10px] border-b border-slate-100 dark:border-slate-800 mb-1 flex justify-between items-center">
+      <span>Toggle Columns</span><i data-lucide="columns" class="w-3.5 h-3.5"></i>
     </div>
-    <div id="contextMenuItems" class="max-h-64 overflow-y-auto space-y-0.5 px-1">
-      <!-- Generated Menu Items -->
-    </div>
-    <div class="border-t border-slate-100 mt-1 pt-1 px-1">
-      <button id="restoreColumnsBtn" class="w-full text-left px-2.5 py-1.5 text-indigo-600 hover:bg-indigo-50 rounded font-medium flex items-center space-x-2 transition-colors">
-        <i data-lucide="rotate-ccw" class="w-3.5 h-3.5"></i>
-        <span>Restore Default State</span>
+    <div id="contextMenuItems" class="max-h-60 overflow-y-auto px-1 space-y-0.5"></div>
+    <div class="border-t border-slate-100 dark:border-slate-800 mt-1 pt-1 px-1">
+      <button id="restoreColumnsBtn" class="w-full text-left px-2 py-1.5 text-indigo-600 dark:text-indigo-400 hover:bg-indigo-50 dark:hover:bg-slate-800 rounded font-medium flex items-center gap-1.5">
+        <i data-lucide="rotate-ccw" class="w-3.5 h-3.5"></i><span>Restore Default State</span>
       </button>
     </div>
   </div>
 
-  <!-- Modal: Upload MOP JSON -->
-  <div id="uploadModal" class="fixed inset-0 bg-slate-900/40 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
-    <div class="bg-white rounded-2xl border border-slate-200 shadow-xl max-w-md w-full p-6 space-y-4 relative">
-      <button id="closeUploadModalBtn" class="absolute top-4 right-4 text-slate-400 hover:text-slate-600 transition-colors">
-        <i data-lucide="x" class="w-5 h-5"></i>
-      </button>
-
-      <div>
-        <h3 class="text-base font-semibold text-slate-900">Upload Application MOP JSON</h3>
-        <p class="text-xs text-slate-500 mt-0.5">Select or drag your JSON files to append them to the planner.</p>
-      </div>
-
-      <div id="dropZone" class="border-2 border-dashed border-slate-300 hover:border-indigo-400 bg-slate-50 hover:bg-indigo-50/50 rounded-xl p-8 text-center transition-all cursor-pointer group">
+  <!-- Upload Modal -->
+  <div id="uploadModal" class="fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
+    <div class="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-xl max-w-md w-full p-6 space-y-4 relative">
+      <button id="closeUploadModalBtn" class="absolute top-4 right-4 text-slate-400 hover:text-slate-600"><i data-lucide="x" class="w-5 h-5"></i></button>
+      <div><h3 class="text-base font-semibold">Upload Application MOP JSON</h3><p class="text-xs text-slate-500 mt-0.5">Select or drag your JSON files to append them to the planner.</p></div>
+      <div id="dropZone" class="border-2 border-dashed border-slate-300 dark:border-slate-700 hover:border-indigo-400 bg-slate-50 dark:bg-slate-800/50 rounded-xl p-8 text-center cursor-pointer transition-all">
         <input type="file" id="fileInput" accept=".json" multiple class="hidden" />
-        <div class="flex flex-col items-center justify-center space-y-2">
-          <div class="p-3 bg-white text-slate-500 group-hover:text-indigo-600 shadow-sm rounded-full transition-all">
-            <i data-lucide="upload-cloud" class="w-6 h-6"></i>
-          </div>
-          <p class="text-xs font-medium text-slate-700">
-            Drop your MOP JSON file here, or <span class="text-indigo-600 underline decoration-indigo-400 underline-offset-4">browse</span>
-          </p>
-          <p class="text-[11px] text-slate-400">Supports single or multi-app files</p>
-        </div>
+        <i data-lucide="upload-cloud" class="w-8 h-8 mx-auto mb-2 text-indigo-500"></i>
+        <p class="text-xs font-medium">Drop your MOP JSON file here, or <span class="text-indigo-600 dark:text-indigo-400 underline">browse</span></p>
+        <p class="text-[11px] text-slate-400 mt-1">Supports single or multi-app files</p>
       </div>
     </div>
   </div>
 
-  <!-- Modal: Edit Task -->
-  <div id="editTaskModal" class="fixed inset-0 bg-slate-900/40 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
-    <div class="bg-white rounded-2xl border border-slate-200 shadow-xl max-w-md w-full p-6 space-y-4 relative">
-      <h3 class="text-base font-semibold text-slate-900">Edit Task</h3>
-      <div class="space-y-3">
-        <div>
-          <label class="block text-xs font-semibold text-slate-600 mb-1">Description</label>
-          <input id="editTaskDescInput" type="text" class="w-full border border-slate-300 rounded-lg p-2 text-xs focus:ring-2 focus:ring-indigo-500 focus:outline-none" />
-        </div>
-        <div>
-          <label class="block text-xs font-semibold text-slate-600 mb-1">Details</label>
-          <textarea id="editTaskDetailsInput" rows="3" class="w-full border border-slate-300 rounded-lg p-2 text-xs focus:ring-2 focus:ring-indigo-500 focus:outline-none"></textarea>
-        </div>
-      </div>
-      <div class="flex justify-end space-x-2 pt-2">
-        <button id="cancelEditTaskBtn" class="px-3 py-1.5 border border-slate-300 text-slate-600 rounded-lg text-xs font-medium hover:bg-slate-50">Cancel</button>
-        <button id="saveEditTaskBtn" class="px-3 py-1.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg text-xs font-medium shadow-sm">Save</button>
+  <!-- Unified Cell Edit Modal -->
+  <div id="editModal" class="fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
+    <div class="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-xl max-w-md w-full p-6 space-y-4">
+      <h3 id="editModalTitle" class="text-base font-semibold">Edit</h3>
+      <div id="editModalBody" class="space-y-3"></div>
+      <div class="flex justify-end gap-2 pt-2 border-t border-slate-100 dark:border-slate-800">
+        <button id="cancelEditBtn" class="px-3 py-1.5 border border-slate-300 dark:border-slate-700 rounded-lg text-xs font-medium hover:bg-slate-50 dark:hover:bg-slate-800">Cancel</button>
+        <button id="saveEditBtn" class="px-3 py-1.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg text-xs font-medium">Save</button>
       </div>
     </div>
   </div>
 
-  <!-- Modal: Select Type -->
-  <div id="editTypeModal" class="fixed inset-0 bg-slate-900/40 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
-    <div class="bg-white rounded-2xl border border-slate-200 shadow-xl max-w-xs w-full p-5 space-y-4 relative">
-      <h3 class="text-sm font-semibold text-slate-900">Select Task Type</h3>
-      <div class="custom-select-shell">
-        <select id="editTypeSelect" class="custom-select">
-          <option value="Task">Task</option>
-          <option value="Milestone">Milestone</option>
-          <option value="Test">Test</option>
-        </select>
-      </div>
-      <div class="flex justify-end space-x-2 pt-1">
-        <button id="cancelEditTypeBtn" class="px-3 py-1.5 border border-slate-300 text-slate-600 rounded-lg text-xs font-medium hover:bg-slate-50">Cancel</button>
-        <button id="saveEditTypeBtn" class="px-3 py-1.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg text-xs font-medium shadow-sm">Save</button>
-      </div>
-    </div>
-  </div>
-
-  <!-- Modal: Edit Duration -->
-  <div id="editDurationModal" class="fixed inset-0 bg-slate-900/40 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
-    <div class="bg-white rounded-2xl border border-slate-200 shadow-xl max-w-xs w-full p-5 space-y-4 relative">
-      <h3 class="text-sm font-semibold text-slate-900">Edit Duration</h3>
-      <div>
-        <label class="block text-xs font-semibold text-slate-600 mb-1">Duration (minutes)</label>
-        <input id="editDurationInput" type="number" min="0" step="1" class="w-full border border-slate-300 rounded-lg p-2 text-xs focus:ring-2 focus:ring-indigo-500 focus:outline-none" />
-      </div>
-      <div class="flex justify-end space-x-2 pt-1">
-        <button id="cancelEditDurationBtn" class="px-3 py-1.5 border border-slate-300 text-slate-600 rounded-lg text-xs font-medium hover:bg-slate-50">Cancel</button>
-        <button id="saveEditDurationBtn" class="px-3 py-1.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg text-xs font-medium shadow-sm">Save</button>
-      </div>
-    </div>
-  </div>
-
-  <!-- Modal: Edit Owner Picker -->
-  <div id="editOwnerModal" class="fixed inset-0 bg-slate-900/40 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
-    <div class="bg-white rounded-2xl border border-slate-200 shadow-xl max-w-md w-full p-6 space-y-4 relative flex flex-col max-h-[85vh]">
-      <h3 class="text-base font-semibold text-slate-900">Select Owner</h3>
-      
-      <div class="relative">
-        <i data-lucide="search" class="w-3.5 h-3.5 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400"></i>
-        <input id="ownerSearchInput" type="text" placeholder="Search team or member name..." class="w-full bg-slate-50 border border-slate-300 rounded-lg pl-9 pr-3 py-1.5 text-xs focus:outline-none focus:border-indigo-600" />
-      </div>
-
-      <div id="ownerTeamList" class="flex-1 overflow-y-auto border border-slate-200 rounded-lg p-2 space-y-3 min-h-[200px]">
-        <!-- Rendered Teams & Members -->
-      </div>
-
-      <div class="flex justify-end space-x-2 pt-2 border-t border-slate-100">
-        <button id="cancelEditOwnerBtn" class="px-3 py-1.5 border border-slate-300 text-slate-600 rounded-lg text-xs font-medium hover:bg-slate-50">Cancel</button>
-        <button id="saveEditOwnerBtn" class="px-3 py-1.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg text-xs font-medium shadow-sm">Save</button>
-      </div>
-    </div>
-  </div>
-
-  <!-- Modal: Comments Pop-up -->
-  <div id="editCommentModal" class="fixed inset-0 bg-slate-900/40 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
-    <div class="bg-white rounded-2xl border border-slate-200 shadow-xl max-w-md w-full p-6 space-y-4 relative">
-      <h3 class="text-base font-semibold text-slate-900">Edit Comment</h3>
-      <div>
-        <textarea id="editCommentInput" rows="4" placeholder="Add comments here..." class="w-full border border-slate-300 rounded-lg p-2 text-xs focus:ring-2 focus:ring-indigo-500 focus:outline-none"></textarea>
-      </div>
-      <div class="flex justify-end space-x-2 pt-2">
-        <button id="cancelEditCommentBtn" class="px-3 py-1.5 border border-slate-300 text-slate-600 rounded-lg text-xs font-medium hover:bg-slate-50">Cancel</button>
-        <button id="saveEditCommentBtn" class="px-3 py-1.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg text-xs font-medium shadow-sm">Save</button>
-      </div>
-    </div>
-  </div>
-
-  <!-- Modal: Edit Date & Time -->
-  <div id="editDateTimeModal" class="fixed inset-0 bg-slate-900/40 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
-    <div class="bg-white rounded-2xl border border-slate-200 shadow-xl max-w-sm w-full p-6 space-y-4 relative">
-      <h3 id="editDateTimeTitle" class="text-base font-semibold text-slate-900">Edit Date & Time</h3>
-      <div>
-        <label class="block text-xs font-semibold text-slate-600 mb-1">Date & Time</label>
-        <input id="editDateTimeInput" type="datetime-local" class="w-full border border-slate-300 rounded-lg p-2 text-xs focus:ring-2 focus:ring-indigo-500 focus:outline-none" />
-      </div>
-      <div class="flex justify-end space-x-2 pt-2">
-        <button id="cancelEditDateTimeBtn" class="px-3 py-1.5 border border-slate-300 text-slate-600 rounded-lg text-xs font-medium hover:bg-slate-50">Cancel</button>
-        <button id="saveEditDateTimeBtn" class="px-3 py-1.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg text-xs font-medium shadow-sm">Save</button>
-      </div>
-    </div>
-  </div>
-
-  <!-- Modal: Edit Issues -->
-  <div id="editIssuesModal" class="fixed inset-0 bg-slate-900/40 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
-    <div class="bg-white rounded-2xl border border-slate-200 shadow-xl max-w-md w-full p-6 space-y-4 relative">
-      <h3 class="text-base font-semibold text-slate-900">Edit Issues</h3>
-      <div>
-        <textarea id="editIssuesInput" rows="4" placeholder="Add issue details here..." class="w-full border border-slate-300 rounded-lg p-2 text-xs focus:ring-2 focus:ring-indigo-500 focus:outline-none"></textarea>
-      </div>
-      <div class="flex justify-end space-x-2 pt-2">
-        <button id="cancelEditIssuesBtn" class="px-3 py-1.5 border border-slate-300 text-slate-600 rounded-lg text-xs font-medium hover:bg-slate-50">Cancel</button>
-        <button id="saveEditIssuesBtn" class="px-3 py-1.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg text-xs font-medium shadow-sm">Save</button>
-      </div>
-    </div>
-  </div>
-
-  <!-- Modal: Confirm Action -->
-  <div id="confirmActionModal" class="fixed inset-0 bg-slate-900/45 backdrop-blur-sm z-[60] hidden flex items-center justify-center p-4">
-    <div class="bg-white rounded-2xl border border-slate-200 shadow-2xl max-w-md w-full p-5 relative">
-      <div class="flex items-start gap-3">
-        <div class="flex h-11 w-11 items-center justify-center rounded-xl bg-red-50 text-red-600 border border-red-200">
-          <i data-lucide="triangle-alert" class="w-5 h-5"></i>
-        </div>
-        <div class="flex-1 min-w-0">
-          <h3 id="confirmActionTitle" class="text-base font-semibold text-slate-900">Confirm action</h3>
-          <p id="confirmActionMessage" class="mt-1 text-sm text-slate-600">This action cannot be undone.</p>
-        </div>
-      </div>
+  <!-- Confirm Action Modal -->
+  <div id="confirmActionModal" class="fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-[60] hidden flex items-center justify-center p-4">
+    <div class="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-2xl max-w-md w-full p-5">
+      <div><h3 id="confirmActionTitle" class="text-base font-semibold">Confirm action</h3><p id="confirmActionMessage" class="mt-1 text-xs text-slate-500">This action cannot be undone.</p></div>
       <div class="mt-5 flex justify-end gap-2">
-        <button id="cancelConfirmActionBtn" class="px-3 py-2 border border-slate-300 text-slate-600 rounded-lg text-xs font-medium hover:bg-slate-50">Cancel</button>
-        <button id="confirmActionBtn" class="px-3 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg text-xs font-semibold shadow-sm">Delete</button>
+        <button id="cancelConfirmActionBtn" class="px-3 py-1.5 border border-slate-300 dark:border-slate-700 rounded-lg text-xs font-medium">Cancel</button>
+        <button id="confirmActionBtn" class="px-3 py-1.5 bg-red-600 hover:bg-red-700 text-white rounded-lg text-xs font-semibold">Confirm</button>
       </div>
     </div>
   </div>
 
   <script>
-    lucide.createIcons();
+    const $ = (id) => document.getElementById(id);
 
     const TEAMS_DATA = [
-      {
-        teamName: "Infrastructure & Cloud Ops",
-        members: ["Alex Rivera", "David Chen", "Sarah Jenkins"]
-      },
-      {
-        teamName: "Database Reliability (DBA)",
-        members: ["Michael Scott", "Pam Beesly", "Jim Halpert"]
-      },
-      {
-        teamName: "Quality Assurance (QA)",
-        members: ["Dwight Schrute", "Angela Martin", "Oscar Martinez"]
-      },
-      {
-        teamName: "Security & Compliance",
-        members: ["Ryan Howard", "Kelly Kapoor"]
-      }
+      { teamName: "Infrastructure & Cloud Ops", members: ["Alex Rivera", "David Chen", "Sarah Jenkins"] },
+      { teamName: "Database Reliability (DBA)", members: ["Michael Scott", "Pam Beesly", "Jim Halpert"] },
+      { teamName: "Quality Assurance (QA)", members: ["Dwight Schrute", "Angela Martin", "Oscar Martinez"] },
+      { teamName: "Security & Compliance", members: ["Ryan Howard", "Kelly Kapoor"] }
     ];
-
-    // DOM Elements
-    const dropZone = document.getElementById('dropZone');
-    const fileInput = document.getElementById('fileInput');
-    const tableContainer = document.getElementById('tableContainer');
-    const calendarContainer = document.getElementById('calendarContainer');
-    const calendarContent = document.getElementById('calendarContent');
-    const calendarToolbar = document.getElementById('calendarToolbar');
-    const calendarPeriodLabel = document.getElementById('calendarPeriodLabel');
-    const calendarTodayBtn = document.getElementById('calendarTodayBtn');
-    const calendarPrevBtn = document.getElementById('calendarPrevBtn');
-    const calendarNextBtn = document.getElementById('calendarNextBtn');
-    const calendarViewButtons = document.querySelectorAll('[data-calendar-view]');
-    const calendarKindButtons = document.querySelectorAll('[data-calendar-kind]');
-    const tableHeader = document.getElementById('tableHeader');
-    const tableBody = document.getElementById('tableBody');
-    const tableScrollContainer = document.querySelector('#tableContainer .overflow-x-auto');
-    const emptyState = document.getElementById('emptyState');
-    const searchInput = document.getElementById('searchInput');
-    const appSearchInput = document.getElementById('appSearchInput');
-    const clearAllBtn = document.getElementById('clearAllBtn');
-    const expandAllBtn = document.getElementById('expandAllBtn');
-    const collapseAllBtn = document.getElementById('collapseAllBtn');
-    
-    const activeViewBanner = document.getElementById('activeViewBanner');
-    const currentViewLabel = document.getElementById('currentViewLabel');
-    const openCalendarBtn = document.getElementById('openCalendarBtn');
-    const exportJsonBtn = document.getElementById('exportJsonBtn');
-    const themeToggleBtn = document.getElementById('themeToggleBtn');
-    const themeIcon = document.getElementById('themeIcon');
-    const THEME_KEY = 'edr_planner_theme';
-
-    // Header Column Context Menu
-    const columnContextMenu = document.getElementById('columnContextMenu');
-    const contextMenuItems = document.getElementById('contextMenuItems');
-    const restoreColumnsBtn = document.getElementById('restoreColumnsBtn');
-
-    // Modals
-    const uploadModal = document.getElementById('uploadModal');
-    const openUploadModalBtn = document.getElementById('openUploadModalBtn');
-    const closeUploadModalBtn = document.getElementById('closeUploadModalBtn');
-    const appList = document.getElementById('appList');
-    const emptyAppSidebar = document.getElementById('emptyAppSidebar');
-    const appCountText = document.getElementById('appCountText');
-
-    // Editing Modals
-    const editTaskModal = document.getElementById('editTaskModal');
-    const editTaskDescInput = document.getElementById('editTaskDescInput');
-    const editTaskDetailsInput = document.getElementById('editTaskDetailsInput');
-    const cancelEditTaskBtn = document.getElementById('cancelEditTaskBtn');
-    const saveEditTaskBtn = document.getElementById('saveEditTaskBtn');
-
-    const editTypeModal = document.getElementById('editTypeModal');
-    const editTypeSelect = document.getElementById('editTypeSelect');
-    const cancelEditTypeBtn = document.getElementById('cancelEditTypeBtn');
-    const saveEditTypeBtn = document.getElementById('saveEditTypeBtn');
-
-    const editDurationModal = document.getElementById('editDurationModal');
-    const editDurationInput = document.getElementById('editDurationInput');
-    const cancelEditDurationBtn = document.getElementById('cancelEditDurationBtn');
-    const saveEditDurationBtn = document.getElementById('saveEditDurationBtn');
-
-    const editOwnerModal = document.getElementById('editOwnerModal');
-    const ownerSearchInput = document.getElementById('ownerSearchInput');
-    const ownerTeamList = document.getElementById('ownerTeamList');
-    const cancelEditOwnerBtn = document.getElementById('cancelEditOwnerBtn');
-    const saveEditOwnerBtn = document.getElementById('saveEditOwnerBtn');
-
-    const editCommentModal = document.getElementById('editCommentModal');
-    const editCommentInput = document.getElementById('editCommentInput');
-    const cancelEditCommentBtn = document.getElementById('cancelEditCommentBtn');
-    const saveEditCommentBtn = document.getElementById('saveEditCommentBtn');
-
-    const editDateTimeModal = document.getElementById('editDateTimeModal');
-    const editDateTimeTitle = document.getElementById('editDateTimeTitle');
-    const editDateTimeInput = document.getElementById('editDateTimeInput');
-    const cancelEditDateTimeBtn = document.getElementById('cancelEditDateTimeBtn');
-    const saveEditDateTimeBtn = document.getElementById('saveEditDateTimeBtn');
-
-    const editIssuesModal = document.getElementById('editIssuesModal');
-    const editIssuesInput = document.getElementById('editIssuesInput');
-    const cancelEditIssuesBtn = document.getElementById('cancelEditIssuesBtn');
-    const saveEditIssuesBtn = document.getElementById('saveEditIssuesBtn');
-
-    const confirmActionModal = document.getElementById('confirmActionModal');
-    const confirmActionTitle = document.getElementById('confirmActionTitle');
-    const confirmActionMessage = document.getElementById('confirmActionMessage');
-    const confirmActionBtn = document.getElementById('confirmActionBtn');
-    const cancelConfirmActionBtn = document.getElementById('cancelConfirmActionBtn');
-
-    const STORAGE_KEY_APPS = 'edr_planner_uploaded_apps';
-    const STORAGE_KEY_STATES = 'edr_planner_collapsed_states';
-    const STORAGE_KEY_COLUMNS = 'edr_planner_column_visibility';
-    const STORAGE_KEY_SELECTED_APP = 'edr_planner_selected_app_id';
-    const STORAGE_KEY_FROZEN_COLUMNS = 'edr_planner_frozen_columns';
-
-    const COLUMNS = [
-      { id: 'index', label: '#' },
-      { id: 'appName', label: 'App Name' },
-      { id: 'task', label: 'Task' },
-      { id: 'dependency', label: 'Dependency' },
-      { id: 'type', label: 'Type' },
-      { id: 'duration', label: 'Duration' },
-      { id: 'start', label: 'PLANNED START' },
-      { id: 'end', label: 'PLANNED END' },
-      { id: 'actualStart', label: 'Actual Start' },
-      { id: 'actualEnd', label: 'Actual End' },
-      { id: 'owner', label: 'Owner' },
-      { id: 'backup', label: 'Backup' },
-      { id: 'checker', label: 'Checker' },
-      { id: 'comments', label: 'Comments' },
-      { id: 'issues', label: 'Issues' }
-    ];
-
-    const DEFAULT_COLUMN_VISIBILITY = COLUMNS.reduce((acc, col) => {
-      acc[col.id] = !['actualStart', 'actualEnd', 'dependency'].includes(col.id);
-      return acc;
-    }, {});
-
-    let uploadedApps = loadFromStorage(STORAGE_KEY_APPS, []);
-    let collapsedStates = loadFromStorage(STORAGE_KEY_STATES, {});
-    let columnVisibility = {
-      ...DEFAULT_COLUMN_VISIBILITY,
-      ...loadFromStorage(STORAGE_KEY_COLUMNS, {})
-    };
-    let selectedAppId = loadFromStorage(STORAGE_KEY_SELECTED_APP, 'ALL');
-    let frozenColumns = Array.isArray(loadFromStorage(STORAGE_KEY_FROZEN_COLUMNS, []))
-      ? loadFromStorage(STORAGE_KEY_FROZEN_COLUMNS, [])
-      : [];
-
-    let activeTaskRef = { appId: null, taskId: null, roleField: 'owner' };
-    let tempSelectedOwner = '';
-    let plannerView = 'table';
-    let calendarView = 'month';
-    let calendarDate = new Date();
-    let pendingConfirmAction = null;
-    let isDarkMode = localStorage.getItem(THEME_KEY) === 'dark';
-    let calendarVisibleKinds = {
-      start: false,
-      end: true,
-      actualStart: false,
-      actualEnd: false
-    };
-
-    const editModals = [editTaskModal, editTypeModal, editDurationModal, editOwnerModal, editCommentModal, editDateTimeModal, editIssuesModal];
-
-    function applyTheme() {
-      document.body.classList.toggle('theme-dark', isDarkMode);
-      if (themeIcon) {
-        themeIcon.setAttribute('data-lucide', isDarkMode ? 'sun' : 'moon');
-      }
-      if (themeToggleBtn) {
-        themeToggleBtn.querySelector('span').textContent = isDarkMode ? 'Light Mode' : 'Night Mode';
-      }
-      lucide.createIcons();
-      try {
-        localStorage.setItem(THEME_KEY, isDarkMode ? 'dark' : 'light');
-      } catch (err) {
-        console.error('Error saving theme preference:', err);
-      }
-    }
-
-    themeToggleBtn.addEventListener('click', () => {
-      isDarkMode = !isDarkMode;
-      applyTheme();
-    });
-
-    document.addEventListener('keydown', (e) => {
-      if (e.key === 'Escape') {
-        editModals.forEach(modal => modal.classList.add('hidden'));
-        uploadModal.classList.add('hidden');
-      }
-    });
-
-    applyTheme();
-
-    calendarKindButtons.forEach(button => {
-      button.addEventListener('click', () => {
-        const kind = button.dataset.calendarKind;
-        if (!kind) return;
-
-        Object.keys(calendarVisibleKinds).forEach(key => {
-          calendarVisibleKinds[key] = key === kind;
-        });
-
-        updateCalendarKindToggles();
-        if (plannerView === 'calendar') {
-          renderPlanner();
-        }
-      });
-    });
 
     const STRUCTURE = [
-      {
-        phase: "Failover",
-        subPhases: [
-          "Pre Failover",
-          "Failover",
-          "Failover Testing(DR)",
-          "Post Failover"
-        ]
-      },
-      {
-        phase: "Failback",
-        subPhases: [
-          "Pre Failback",
-          "Failback",
-          "Failback Testing(PROD)",
-          "Post Failback"
-        ]
-      }
+      { phase: "Failover", subPhases: ["Pre Failover", "Failover", "Failover Testing(DR)", "Post Failover"] },
+      { phase: "Failback", subPhases: ["Pre Failback", "Failback", "Failback Testing(PROD)", "Post Failback"] }
     ];
 
-    function saveToStorage(key, data) {
-      try {
-        localStorage.setItem(key, JSON.stringify(data));
-      } catch (err) {
-        console.error('Error saving data to localStorage:', err);
-      }
+    const COLUMNS = [
+      { id: 'index', label: '#', cls: 'w-12 text-center' },
+      { id: 'appName', label: 'App Name', cls: 'min-w-[140px]' },
+      { id: 'task', label: 'Task', cls: 'min-w-[260px]' },
+      { id: 'dependency', label: 'Dependency', cls: 'min-w-[160px]' },
+      { id: 'type', label: 'Type', cls: 'min-w-[100px]' },
+      { id: 'duration', label: 'Duration', cls: 'min-w-[100px]' },
+      { id: 'start', label: 'PLANNED START', cls: 'min-w-[150px]' },
+      { id: 'end', label: 'PLANNED END', cls: 'min-w-[150px]' },
+      { id: 'actualStart', label: 'Actual Start', cls: 'min-w-[150px]' },
+      { id: 'actualEnd', label: 'Actual End', cls: 'min-w-[150px]' },
+      { id: 'owner', label: 'Owner', cls: 'min-w-[120px]' },
+      { id: 'backup', label: 'Backup', cls: 'min-w-[120px]' },
+      { id: 'checker', label: 'Checker', cls: 'min-w-[120px]' },
+      { id: 'comments', label: 'Comments', cls: 'min-w-[180px]' },
+      { id: 'issues', label: 'Issues', cls: 'min-w-[180px]' }
+    ];
+
+    const KEYS = {
+      APPS: 'edr_planner_uploaded_apps', STATES: 'edr_planner_collapsed_states', COLS: 'edr_planner_column_visibility',
+      SELECTED: 'edr_planner_selected_app_id', FROZEN: 'edr_planner_frozen_columns', THEME: 'edr_planner_theme',
+      DEPS: 'edr_planner_dependency_options', TYPES: 'edr_planner_type_options', TL_RANGE: 'edr_planner_timeline_range'
+    };
+
+    const DEFAULT_COLS = Object.fromEntries(COLUMNS.map(c => [c.id, !['actualStart', 'actualEnd', 'dependency'].includes(c.id)]));
+    const save = (k, v) => { try { localStorage.setItem(k, JSON.stringify(v)); } catch (e) { console.error(e); } };
+    const load = (k, fb) => { try { const v = localStorage.getItem(k); return v ? JSON.parse(v) : fb; } catch { return fb; } };
+
+    let uploadedApps = load(KEYS.APPS, []);
+    let collapsedStates = load(KEYS.STATES, {});
+    let columnVisibility = { ...DEFAULT_COLS, ...load(KEYS.COLS, {}) };
+    let selectedAppId = load(KEYS.SELECTED, 'ALL');
+    let frozenColumns = Array.isArray(load(KEYS.FROZEN, [])) ? load(KEYS.FROZEN, []) : [];
+    let depOptions = load(KEYS.DEPS, ['-', 'None', 'Network Ready', 'DB Replica Synced', 'DNS Cutover', 'Sanity Check']);
+    let typeOptions = load(KEYS.TYPES, ['Task', 'Milestone', 'Test']);
+    let timelineRange = load(KEYS.TL_RANGE, { start: '', end: '' });
+
+    let activeTaskRef = null, tempSelectedOwner = '', plannerView = 'table', showTimeline = true;
+    let calendarView = 'month', calendarDate = new Date(), pendingConfirmAction = null;
+    let isDarkMode = localStorage.getItem(KEYS.THEME) === 'dark';
+    let calendarVisibleKinds = { start: false, end: true, actualStart: false, actualEnd: false };
+
+    const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+    const pad = (n) => String(n).padStart(2, '0');
+    function formatFriendlyDateTime(val) {
+      if (!val || val === '-') return '-';
+      const d = new Date(val);
+      if (Number.isNaN(d.getTime())) return val;
+      const h = d.getHours();
+      return `${d.getDate()} ${MONTHS[d.getMonth()]} ${d.getFullYear()} ${h % 12 || 12}:${pad(d.getMinutes())} ${h >= 12 ? 'PM' : 'AM'}`;
     }
+    const nowStamp = () => formatFriendlyDateTime(new Date());
+    const touchApp = (app) => { if (app) app.lastUpdated = nowStamp(); };
 
-    function loadFromStorage(key, fallback) {
-      try {
-        const item = localStorage.getItem(key);
-        return item ? JSON.parse(item) : fallback;
-      } catch (err) {
-        console.error('Error reading data from localStorage:', err);
-        return fallback;
-      }
+    $('headerRow').innerHTML = COLUMNS.map(c => `<th data-col="${c.id}" class="h-14 py-2 px-3 border-b border-r border-slate-200 dark:border-slate-700 ${c.cls}"><span>${c.label}</span><button type="button" onclick="toggleFreezeColumn('${c.id}', event)" class="freeze-btn p-1 rounded bg-white dark:bg-slate-700 border border-slate-300 dark:border-slate-600 text-slate-500 hover:text-indigo-600" title="Freeze/Unfreeze column"><i data-lucide="lock" class="w-3 h-3"></i></button></th>`).join('');
+
+    function applyTheme() {
+      document.documentElement.classList.toggle('dark', isDarkMode);
+      $('themeIcon').setAttribute('data-lucide', isDarkMode ? 'sun' : 'moon');
+      $('themeText').textContent = isDarkMode ? 'Light Mode' : 'Night Mode';
+      localStorage.setItem(KEYS.THEME, isDarkMode ? 'dark' : 'light');
+      lucide.createIcons();
     }
+    $('themeToggleBtn').onclick = () => { isDarkMode = !isDarkMode; applyTheme(); };
 
-    // Modal Triggers
-    openUploadModalBtn.addEventListener('click', () => uploadModal.classList.remove('hidden'));
-    closeUploadModalBtn.addEventListener('click', () => uploadModal.classList.add('hidden'));
-    uploadModal.addEventListener('click', (e) => {
-      if (e.target === uploadModal) uploadModal.classList.add('hidden');
-    });
-
-    dropZone.addEventListener('click', () => fileInput.click());
-    dropZone.addEventListener('dragover', (e) => { e.preventDefault(); dropZone.classList.add('border-indigo-500', 'bg-indigo-50/50'); });
-    dropZone.addEventListener('dragleave', () => { dropZone.classList.remove('border-indigo-500', 'bg-indigo-50/50'); });
-    dropZone.addEventListener('drop', (e) => {
-      e.preventDefault();
-      dropZone.classList.remove('border-indigo-500', 'bg-indigo-50/50');
-      handleFiles(e.dataTransfer.files);
-    });
-    fileInput.addEventListener('change', (e) => handleFiles(e.target.files));
+    // Upload & File Parsing
+    $('openUploadModalBtn').onclick = () => $('uploadModal').classList.remove('hidden');
+    $('closeUploadModalBtn').onclick = () => $('uploadModal').classList.add('hidden');
+    $('uploadModal').onclick = (e) => { if (e.target === $('uploadModal')) $('uploadModal').classList.add('hidden'); };
+    $('dropZone').onclick = () => $('fileInput').click();
+    $('dropZone').ondragover = (e) => { e.preventDefault(); $('dropZone').classList.add('border-indigo-500'); };
+    $('dropZone').ondragleave = () => $('dropZone').classList.remove('border-indigo-500');
+    $('dropZone').ondrop = (e) => { e.preventDefault(); $('dropZone').classList.remove('border-indigo-500'); handleFiles(e.dataTransfer.files); };
+    $('fileInput').onchange = (e) => handleFiles(e.target.files);
 
     function handleFiles(files) {
       Array.from(files).forEach(file => {
@@ -1171,1223 +346,636 @@
           reader.onload = (e) => {
             try {
               const parsed = JSON.parse(e.target.result);
-              let appName = parsed.appName || parsed.application || parsed.name || file.name.replace('.json', '');
-              let rawTasks = Array.isArray(parsed) ? parsed : (parsed.tasks || [parsed]);
-
+              const appName = parsed.appName || parsed.application || parsed.name || file.name.replace('.json', '');
+              const rawTasks = Array.isArray(parsed) ? parsed : (parsed.tasks || [parsed]);
               const tasks = rawTasks.map((t, idx) => ({
-                id: t.id || 't-' + Date.now() + '-' + idx + '-' + Math.random().toString(36).substr(2, 4),
+                id: t.id || `t-${Date.now()}-${idx}-${Math.random().toString(36).slice(2, 6)}`,
                 task: t.task || t.Task || 'Unnamed Task',
                 dependency: t.dependency || t.Dependency || t.dependencies || t.Dependencies || '-',
-                type: t.itemType || t.Type || 'Task',
-                details: t.details || t.Details || '',
-                duration: t.duration || t.Duration || 0,
-                start: t.start || t.Start || '-',
-                end: t.end || t.End || '-',
-                actualStart: t.actualStart || t.ActualStart || t.actual_start || '-',
-                actualEnd: t.actualEnd || t.ActualEnd || t.actual_end || '-',
-                owner: t.owner || t.Owner || '-',
-                backup: t.backup || t.Backup || '-',
-                checker: t.checker || t.Checker || '-',
-                comments: t.comments || t.Comments || '-',
-                issues: t.issues || t.Issues || '-',
-                subPhase: t.subPhase || t.SubPhase || t.type || 'Pre Failover'
+                type: t.itemType || t.Type || t.type || 'Task', details: t.details || t.Details || '',
+                duration: t.duration || t.Duration || 0, start: t.start || t.Start || '-', end: t.end || t.End || '-',
+                actualStart: t.actualStart || t.ActualStart || t.actual_start || '-', actualEnd: t.actualEnd || t.ActualEnd || t.actual_end || '-',
+                owner: t.owner || t.Owner || '-', backup: t.backup || t.Backup || '-', checker: t.checker || t.Checker || '-',
+                comments: t.comments || t.Comments || '-', issues: t.issues || t.Issues || '-', subPhase: t.subPhase || t.SubPhase || 'Pre Failover'
               }));
-
               uploadedApps.push({
-                id: 'app-' + Date.now() + '-' + Math.random().toString(36).substr(2, 4),
-                name: appName,
-                tasks: tasks
+                id: `app-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`, name: appName,
+                version: parsed.version || parsed.appVersion || 'v1.0.0',
+                description: parsed.description || 'EDR MOP execution plan.', lastUpdated: nowStamp(), tasks
               });
-
-              saveToStorage(STORAGE_KEY_APPS, uploadedApps);
-              uploadModal.classList.add('hidden');
+              save(KEYS.APPS, uploadedApps);
+              $('uploadModal').classList.add('hidden');
               renderSidebar();
               renderPlanner();
-            } catch (err) {
-              alert(`Error parsing ${file.name}: Invalid JSON structure.`);
-            }
+            } catch { alert(`Error parsing ${file.name}: Invalid JSON structure.`); }
           };
           reader.readAsText(file);
         }
       });
     }
 
-    function openConfirmAction({ title, message, confirmText, onConfirm }) {
-      confirmActionTitle.textContent = title;
-      confirmActionMessage.textContent = message;
-      confirmActionBtn.textContent = confirmText || 'Confirm';
-      pendingConfirmAction = onConfirm || null;
-      confirmActionModal.classList.remove('hidden');
+    function openConfirm({ title, message, confirmText, onConfirm }) {
+      $('confirmActionTitle').textContent = title;
+      $('confirmActionMessage').textContent = message;
+      $('confirmActionBtn').textContent = confirmText || 'Confirm';
+      pendingConfirmAction = onConfirm;
+      $('confirmActionModal').classList.remove('hidden');
     }
+    $('cancelConfirmActionBtn').onclick = () => $('confirmActionModal').classList.add('hidden');
+    $('confirmActionBtn').onclick = () => { if (pendingConfirmAction) pendingConfirmAction(); $('confirmActionModal').classList.add('hidden'); };
 
-    function closeConfirmAction() {
-      confirmActionModal.classList.add('hidden');
-      pendingConfirmAction = null;
-    }
+    function selectAppFilter(appId) { selectedAppId = appId; save(KEYS.SELECTED, selectedAppId); renderSidebar(); renderPlanner(); }
 
-    cancelConfirmActionBtn.addEventListener('click', closeConfirmAction);
-    confirmActionModal.addEventListener('click', (event) => {
-      if (event.target === confirmActionModal) closeConfirmAction();
-    });
-    confirmActionBtn.addEventListener('click', () => {
-      if (pendingConfirmAction) {
-        pendingConfirmAction();
-      }
-      closeConfirmAction();
-    });
-
-    function removeApp(appId, event) {
-      if (event) event.stopPropagation();
-      const targetApp = uploadedApps.find(app => app.id === appId);
-      const appName = targetApp ? targetApp.name : 'this application';
-
-      openConfirmAction({
-        title: 'Remove application?',
-        message: `This will remove "${appName}" and all of its tasks from the plan. This action cannot be undone.`,
-        confirmText: 'Delete App',
+    function removeApp(appId, e) {
+      e.stopPropagation();
+      const target = uploadedApps.find(a => a.id === appId);
+      openConfirm({
+        title: 'Remove application?', message: `Remove "${target ? target.name : 'this app'}" and all its tasks?`, confirmText: 'Delete App',
         onConfirm: () => {
-          uploadedApps = uploadedApps.filter(app => app.id !== appId);
-          if (selectedAppId === appId) {
-            selectedAppId = 'ALL';
-            saveToStorage(STORAGE_KEY_SELECTED_APP, selectedAppId);
-          }
-          saveToStorage(STORAGE_KEY_APPS, uploadedApps);
-          renderSidebar();
-          renderPlanner();
+          uploadedApps = uploadedApps.filter(a => a.id !== appId);
+          if (selectedAppId === appId) { selectedAppId = 'ALL'; save(KEYS.SELECTED, 'ALL'); }
+          save(KEYS.APPS, uploadedApps); renderSidebar(); renderPlanner();
         }
       });
-    }
-
-    function selectAppFilter(appId) {
-      selectedAppId = appId;
-      saveToStorage(STORAGE_KEY_SELECTED_APP, selectedAppId);
-      renderSidebar();
-      renderPlanner();
     }
 
     function renderSidebar() {
-      const appQuery = appSearchInput.value.toLowerCase().trim();
-      const filteredApps = uploadedApps.filter(app => app.name.toLowerCase().includes(appQuery));
-
-      appCountText.textContent = `${uploadedApps.length} Loaded`;
-      
-      if (uploadedApps.length === 0) {
-        emptyAppSidebar.innerHTML = `
-          <i data-lucide="file-code" class="w-8 h-8 mx-auto mb-2 opacity-50"></i>
-          <p class="text-xs">No apps uploaded yet.</p>
-          <p class="text-[10px] text-slate-400 mt-1">Click "+ Add App" to import JSON.</p>
-        `;
-        emptyAppSidebar.classList.remove('hidden');
-        appList.querySelectorAll('.app-item-wrapper').forEach(el => el.remove());
-        lucide.createIcons();
-        return;
+      const q = $('appSearchInput').value.toLowerCase().trim();
+      const filtered = uploadedApps.filter(a => a.name.toLowerCase().includes(q));
+      $('appCountText').textContent = `${uploadedApps.length} Loaded`;
+      if (!uploadedApps.length) {
+        $('appList').innerHTML = `<div class="text-center py-8 text-slate-400"><i data-lucide="file-code" class="w-8 h-8 mx-auto mb-2 opacity-50"></i><p class="text-xs">No apps uploaded yet.</p></div>`;
+        return lucide.createIcons();
       }
-
-      emptyAppSidebar.classList.add('hidden');
-      appList.innerHTML = '';
-
-      // Add 'All Applications' option item
-      const isAllSelected = selectedAppId === 'ALL';
-      const allItem = document.createElement('div');
-      allItem.className = `app-item-wrapper flex items-center justify-between px-3 py-2 rounded-lg cursor-pointer transition-all border ${
-        isAllSelected 
-          ? 'bg-indigo-600 text-white border-indigo-600 shadow-sm font-semibold' 
-          : 'bg-slate-100/70 hover:bg-slate-100 text-slate-700 border-slate-200'
-      }`;
-      allItem.onclick = () => selectAppFilter('ALL');
-      allItem.innerHTML = `
-        <div class="flex items-center space-x-2.5 truncate">
-          <i data-lucide="layers" class="w-4 h-4 shrink-0 ${isAllSelected ? 'text-white' : 'text-indigo-600'}"></i>
-          <span class="text-xs truncate">All Applications</span>
-        </div>
-        <span class="text-[10px] px-1.5 py-0.5 rounded ${isAllSelected ? 'bg-indigo-700 text-indigo-100' : 'bg-slate-200 text-slate-600'} font-mono">${uploadedApps.length}</span>
-      `;
-      appList.appendChild(allItem);
-
-      if (filteredApps.length === 0 && appQuery) {
-        const noMatchMsg = document.createElement('div');
-        noMatchMsg.className = 'text-xs text-slate-400 text-center py-4';
-        noMatchMsg.textContent = 'No matching applications.';
-        appList.appendChild(noMatchMsg);
-        lucide.createIcons();
-        return;
-      }
-
-      filteredApps.forEach(app => {
-        const isSelected = selectedAppId === app.id;
-        const item = document.createElement('div');
-        item.className = `app-item-wrapper flex items-center justify-between px-3 py-2 rounded-lg cursor-pointer transition-all border group ${
-          isSelected 
-            ? 'bg-indigo-50 border-indigo-300 text-indigo-900 font-semibold shadow-sm' 
-            : 'bg-white hover:border-slate-300 text-slate-700 border-slate-200'
-        }`;
-        item.onclick = () => selectAppFilter(app.id);
-        item.innerHTML = `
-          <div class="flex items-center space-x-2.5 truncate">
-            <i data-lucide="box" class="w-4 h-4 shrink-0 ${isSelected ? 'text-indigo-600' : 'text-slate-400'}"></i>
-            <span class="text-xs truncate">${app.name}</span>
-          </div>
-          <button onclick="removeApp('${app.id}', event)" title="Remove Application" class="text-slate-400 hover:text-red-500 p-1 rounded transition-colors opacity-0 group-hover:opacity-100">
-            <i data-lucide="trash-2" class="w-3.5 h-3.5"></i>
-          </button>
-        `;
-        appList.appendChild(item);
+      const isAll = selectedAppId === 'ALL';
+      let html = `<div onclick="selectAppFilter('ALL')" class="flex items-center justify-between px-3 py-2 rounded-lg cursor-pointer border text-xs ${isAll ? 'bg-indigo-600 text-white border-indigo-600 font-semibold' : 'bg-slate-100 dark:bg-slate-800 border-slate-200 dark:border-slate-700'}"><div class="flex items-center gap-2 truncate"><i data-lucide="layers" class="w-4 h-4 shrink-0"></i><span>All Applications</span></div><span class="text-[10px] font-mono">${uploadedApps.length}</span></div>`;
+      filtered.forEach(app => {
+        const active = selectedAppId === app.id;
+        html += `
+          <div onclick="selectAppFilter('${app.id}')" class="flex items-center justify-between px-3 py-2 rounded-lg cursor-pointer border group text-xs ${active ? 'bg-indigo-50 dark:bg-indigo-950/70 border-indigo-400 text-indigo-900 dark:text-indigo-200 font-semibold' : 'bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800 hover:border-slate-300'}">
+            <div class="min-w-0 flex-1 pr-2">
+              <div class="flex items-center gap-1.5 truncate"><i data-lucide="box" class="w-3.5 h-3.5 shrink-0 text-slate-400"></i><span class="truncate">${app.name}</span></div>
+              <div class="text-[10px] text-slate-400 truncate font-normal mt-0.5">${app.description || 'No description'}</div>
+            </div>
+            <div class="flex items-center gap-1 opacity-0 group-hover:opacity-100 shrink-0">
+              <button onclick="editAppMeta('${app.id}', event)" title="Edit App Attributes" class="p-1 text-slate-400 hover:text-indigo-600"><i data-lucide="pencil" class="w-3.5 h-3.5"></i></button>
+              <button onclick="removeApp('${app.id}', event)" title="Delete App" class="p-1 text-slate-400 hover:text-red-500"><i data-lucide="trash-2" class="w-3.5 h-3.5"></i></button>
+            </div>
+          </div>`;
       });
-
+      $('appList').innerHTML = html;
       lucide.createIcons();
     }
 
-    function parseDuration(val) {
-      if (!val) return 0;
-      const num = parseInt(val, 10);
-      return isNaN(num) ? 0 : num;
-    }
-
-    function toggleCollapse(id) {
-      collapsedStates[id] = !collapsedStates[id];
-      saveToStorage(STORAGE_KEY_STATES, collapsedStates);
-      renderPlanner(true);
-    }
-
-    expandAllBtn.addEventListener('click', () => {
-      collapsedStates = {};
-      saveToStorage(STORAGE_KEY_STATES, collapsedStates);
-      renderPlanner(true);
-    });
-
-    collapseAllBtn.addEventListener('click', () => {
-      STRUCTURE.forEach(p => {
-        collapsedStates[p.phase] = true;
-        p.subPhases.forEach(sp => collapsedStates[`${p.phase}-${sp}`] = true);
-      });
-      saveToStorage(STORAGE_KEY_STATES, collapsedStates);
-      renderPlanner(true);
-    });
-
-    // Column Context Menu
-    tableHeader.addEventListener('contextmenu', (e) => {
-      e.preventDefault();
-      renderContextMenu();
-      columnContextMenu.style.left = `${e.clientX}px`;
-      columnContextMenu.style.top = `${e.clientY}px`;
-      columnContextMenu.classList.remove('hidden');
-    });
-
-    document.addEventListener('click', (e) => {
-      if (!columnContextMenu.contains(e.target)) {
-        columnContextMenu.classList.add('hidden');
-      }
-    });
-
-    if (tableScrollContainer) {
-      tableScrollContainer.addEventListener('scroll', () => {
-        requestAnimationFrame(() => updateFrozenColumnLayout());
-      }, { passive: true });
-    }
-
-    function renderContextMenu() {
-      contextMenuItems.innerHTML = '';
-      COLUMNS.forEach(col => {
-        // Hide appName option if not viewing ALL apps
-        if (col.id === 'appName' && selectedAppId !== 'ALL') return;
-
-        const isChecked = columnVisibility[col.id] !== false;
-        const item = document.createElement('label');
-        item.className = 'flex items-center space-x-2 px-2.5 py-1.5 hover:bg-slate-100 rounded cursor-pointer transition-colors text-slate-700 font-medium select-none';
-        item.innerHTML = `
-          <input type="checkbox" data-column="${col.id}" ${isChecked ? 'checked' : ''} class="rounded border-slate-300 text-indigo-600 focus:ring-indigo-500 w-3.5 h-3.5">
-          <span>${col.label}</span>
-        `;
-        item.querySelector('input').addEventListener('change', (e) => {
-          columnVisibility[col.id] = e.target.checked;
-          saveToStorage(STORAGE_KEY_COLUMNS, columnVisibility);
-          applyColumnVisibility();
-        });
-        contextMenuItems.appendChild(item);
-      });
-      lucide.createIcons();
-    }
-
-    restoreColumnsBtn.addEventListener('click', () => {
-      columnVisibility = { ...DEFAULT_COLUMN_VISIBILITY };
-      frozenColumns = [];
-      saveToStorage(STORAGE_KEY_COLUMNS, columnVisibility);
-      saveToStorage(STORAGE_KEY_FROZEN_COLUMNS, frozenColumns);
-      applyColumnVisibility();
-      renderContextMenu();
-    });
+    function toggleCollapse(id) { collapsedStates[id] = !collapsedStates[id]; save(KEYS.STATES, collapsedStates); renderPlanner(); }
+    $('expandAllBtn').onclick = () => { collapsedStates = {}; save(KEYS.STATES, collapsedStates); renderPlanner(); };
+    $('collapseAllBtn').onclick = () => {
+      STRUCTURE.forEach(p => { collapsedStates[p.phase] = true; p.subPhases.forEach(sp => collapsedStates[`${p.phase}-${sp}`] = true); });
+      save(KEYS.STATES, collapsedStates); renderPlanner();
+    };
 
     function getVisibleColumnIds() {
-      return COLUMNS.filter(col => {
-        if (col.id === 'appName') {
-          return selectedAppId === 'ALL' && columnVisibility[col.id] !== false;
-        }
-        return columnVisibility[col.id] !== false;
-      }).map(col => col.id);
+      return COLUMNS.filter(c => (c.id === 'appName' ? selectedAppId === 'ALL' && columnVisibility[c.id] !== false : columnVisibility[c.id] !== false)).map(c => c.id);
     }
-
-    function toggleFreezeColumn(colId) {
-      if (!COLUMNS.some(col => col.id === colId)) return;
-
-      const visibleColumns = getVisibleColumnIds();
-      if (!visibleColumns.includes(colId)) return;
-
-      if (frozenColumns.includes(colId)) {
-        frozenColumns = frozenColumns.filter(id => id !== colId);
-      } else {
-        frozenColumns = [...new Set([...frozenColumns, colId])];
-      }
-
-      saveToStorage(STORAGE_KEY_FROZEN_COLUMNS, frozenColumns);
-      applyColumnVisibility();
+    function toggleFreezeColumn(colId, e) {
+      if (e) e.stopPropagation();
+      if (!getVisibleColumnIds().includes(colId)) return;
+      frozenColumns = frozenColumns.includes(colId) ? frozenColumns.filter(id => id !== colId) : [...frozenColumns, colId];
+      save(KEYS.FROZEN, frozenColumns); applyColumnVisibility();
     }
-
-    function updateFrozenColumnLayout() {
-      const visibleColumns = getVisibleColumnIds();
-      let offset = 0;
-
-      visibleColumns.forEach(colId => {
-        const th = tableHeader.querySelector(`th[data-col="${colId}"]`);
-        const tds = tableBody.querySelectorAll(`td[data-col="${colId}"]`);
-        const isFrozen = frozenColumns.includes(colId);
-
-        if (th) {
-          th.classList.toggle('is-frozen', isFrozen);
-          th.style.setProperty('--freeze-left', isFrozen ? `${offset}px` : '0px');
-          th.style.left = isFrozen ? `${offset}px` : '0px';
-          th.style.position = isFrozen ? 'sticky' : 'relative';
-          th.style.insetInlineStart = isFrozen ? `${offset}px` : '0px';
-          const pinButton = th.querySelector('.freeze-column-button');
-          if (pinButton) {
-            pinButton.setAttribute('aria-label', isFrozen ? 'Unfreeze column' : 'Freeze column');
-            pinButton.title = isFrozen ? 'Unfreeze column' : 'Freeze column';
-            pinButton.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect width="18" height="11" x="3" y="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg>';
-          }
-        }
-
-        tds.forEach(td => {
-          td.classList.toggle('is-frozen', isFrozen);
-          td.style.setProperty('--freeze-left', isFrozen ? `${offset}px` : '0px');
-          td.style.left = isFrozen ? `${offset}px` : '0px';
-          td.style.position = isFrozen ? 'sticky' : 'relative';
-          td.style.insetInlineStart = isFrozen ? `${offset}px` : '0px';
-          td.style.zIndex = isFrozen ? '8' : '';
-        });
-
-        if (isFrozen) {
-          const thWidth = th ? th.getBoundingClientRect().width : 0;
-          offset += thWidth || 0;
-        }
-      });
-    }
-
-    function syncFreezeControls() {
-      tableHeader.querySelectorAll('th[data-col]').forEach(th => {
-        const colId = th.dataset.col;
-        const isVisible = getVisibleColumnIds().includes(colId);
-        const isFrozen = frozenColumns.includes(colId);
-        let btn = th.querySelector('.freeze-column-button');
-
-        if (!btn) {
-          btn = document.createElement('button');
-          btn.type = 'button';
-          btn.className = 'freeze-column-button';
-          btn.addEventListener('click', (event) => {
-            event.preventDefault();
-            event.stopPropagation();
-            toggleFreezeColumn(colId);
-          });
-          th.appendChild(btn);
-        }
-
-        btn.setAttribute('aria-label', isFrozen ? 'Unfreeze column' : 'Freeze column');
-        btn.title = isFrozen ? 'Unfreeze column' : 'Freeze column';
-        btn.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect width="18" height="11" x="3" y="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg>';
-
-        th.style.display = isVisible ? '' : 'none';
-      });
-
-      lucide.createIcons();
-    }
-
     function applyColumnVisibility() {
-      COLUMNS.forEach(col => {
-        let isVisible = columnVisibility[col.id] !== false;
-
-        if (col.id === 'appName') {
-          isVisible = isVisible && (selectedAppId === 'ALL');
-        }
-
-        const th = tableHeader.querySelector(`th[data-col="${col.id}"]`);
-        if (th) th.style.display = isVisible ? '' : 'none';
-
-        const tds = tableBody.querySelectorAll(`td[data-col="${col.id}"]`);
-        tds.forEach(td => td.style.display = isVisible ? '' : 'none');
+      const visible = getVisibleColumnIds();
+      COLUMNS.forEach(c => {
+        const show = visible.includes(c.id), th = $('tableHeader').querySelector(`th[data-col="${c.id}"]`);
+        if (th) th.style.display = show ? '' : 'none';
+        $('tableBody').querySelectorAll(`td[data-col="${c.id}"]`).forEach(td => td.style.display = show ? '' : 'none');
       });
-
-      frozenColumns = frozenColumns.filter(colId => getVisibleColumnIds().includes(colId));
-      saveToStorage(STORAGE_KEY_FROZEN_COLUMNS, frozenColumns);
-      syncFreezeControls();
-      updateFrozenColumnLayout();
-    }
-
-    function exportCurrentTableData() {
-      const exportName = selectedAppId === 'ALL'
-        ? 'all-applications'
-        : (uploadedApps.find(app => app.id === selectedAppId)?.name || 'selected-app').replace(/[^a-z0-9-_]+/gi, '-').toLowerCase();
-
-      const appsToExport = selectedAppId === 'ALL'
-        ? uploadedApps
-        : uploadedApps.filter(app => app.id === selectedAppId);
-
-      const toTitleCaseHeader = (value) => {
-        const spaced = String(value)
-          .replace(/([a-z0-9])([A-Z])/g, '$1 $2')
-          .replace(/[_-]+/g, ' ')
-          .trim();
-
-        return spaced
-          .split(/\s+/)
-          .filter(Boolean)
-          .map(word => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
-          .join(' ');
-      };
-
-      const widthMap = {
-        task: 40.63,
-        comments: 40.63,
-        issues: 40.63,
-        appName: 22,
-        type: 16,
-        phase: 18,
-        subPhase: 18,
-        duration: 14,
-        actualStart: 18,
-        actualEnd: 18,
-        owner: 16,
-        backup: 16,
-        checker: 16,
-        dependency: 18,
-        start: 18,
-        end: 18,
-        default: 16
-      };
-
-      const workbook = XLSX.utils.book_new();
-
-      appsToExport.forEach(app => {
-        const worksheetRows = (app.tasks || []).map(task => {
-          const normalized = { appName: app.name };
-          Object.entries(task).forEach(([key, value]) => {
-            normalized[key] = value ?? '';
-          });
-          return normalized;
-        });
-
-        const sheetName = (app.name || 'Application')
-          .replace(/[^\w\s-]/g, ' ')
-          .trim()
-          .slice(0, 31) || 'Application';
-
-        const worksheet = XLSX.utils.json_to_sheet(worksheetRows, { defval: '' });
-        const columns = Object.keys(worksheet["!ref"] ? {} : {});
-
-        const exportedHeaders = Object.keys(worksheetRows[0] || { appName: 'App Name' });
-        const headerMap = {};
-        exportedHeaders.forEach((key) => {
-          headerMap[key] = toTitleCaseHeader(key === 'appName' ? 'App Name' : key);
-        });
-
-        const orderedHeaders = exportedHeaders;
-        const orderedRows = worksheetRows.map(row => {
-          const remapped = {};
-          orderedHeaders.forEach((key) => {
-            remapped[headerMap[key]] = row[key] ?? '';
-          });
-          return remapped;
-        });
-
-        const remappedWorksheet = XLSX.utils.json_to_sheet(orderedRows, { defval: '' });
-        remappedWorksheet['!cols'] = orderedHeaders.map((key) => ({
-          wpx: widthMap[key] ?? widthMap.default,
-          width: widthMap[key] ?? widthMap.default
-        }));
-
-        XLSX.utils.book_append_sheet(workbook, remappedWorksheet, sheetName);
-      });
-
-      if (!appsToExport.length) {
-        const emptySheet = XLSX.utils.json_to_sheet([
-          { AppName: 'No Data', Message: 'No tasks available for export.' }
-        ], { defval: '' });
-        emptySheet['!cols'] = [
-          { wpx: 20, width: 20 },
-          { wpx: 40.63, width: 40.63 }
-        ];
-        XLSX.utils.book_append_sheet(workbook, emptySheet, 'No Data');
-      }
-
-      XLSX.writeFile(workbook, `edr-planner-${exportName}.xlsx`);
-    }
-
-    exportJsonBtn.addEventListener('click', () => {
-      openConfirmAction({
-        title: 'Export workbook?',
-        message: 'This will generate an .xlsx file with the current planner data. Continue with export?',
-        confirmText: 'Export',
-        onConfirm: exportCurrentTableData
-      });
-    });
-
-    function parseCalendarDate(value) {
-      if (!value || value === '-') return null;
-      const date = new Date(value);
-      return Number.isNaN(date.getTime()) ? null : date;
-    }
-
-    function calendarDateKey(date) {
-      return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
-    }
-
-    function calendarStartOfDay(date) {
-      return new Date(date.getFullYear(), date.getMonth(), date.getDate());
-    }
-
-    function calendarStartOfWeek(date) {
-      const day = date.getDay();
-      const mondayOffset = day === 0 ? -6 : 1 - day;
-      const start = calendarStartOfDay(date);
-      start.setDate(start.getDate() + mondayOffset);
-      return start;
-    }
-
-    function calendarHourLabel(hour) {
-      const period = hour >= 12 ? 'PM' : 'AM';
-      const displayHour = hour % 12 || 12;
-      return `${displayHour}:00 ${period}`;
-    }
-
-    function calendarEventCard(item) {
-      const kinds = {
-        start: 'Planned Start',
-        end: 'Planned End',
-        actualStart: 'Actual Start',
-        actualEnd: 'Actual End'
-      };
-      const kind = item._calendarKind || 'start';
-      return `<div class="calendar-event calendar-event--${kind} mb-1 rounded px-1.5 py-1 text-[10px] leading-tight" title="${item._appName}: ${item.task}"><strong class="block truncate">${item._appName}</strong><span class="block truncate">${item.task}</span><span class="mt-0.5 block uppercase tracking-wide opacity-75">${kinds[kind] || 'Task'}</span></div>`;
-    }
-
-    function calendarItemsForDate(items, date) {
-      const key = calendarDateKey(date);
-      return items.filter(item => item._calendarDate && calendarDateKey(item._calendarDate) === key);
-    }
-
-    function calendarBadgeClassForDate(items) {
-      if (!items.length) return '';
-      const orderedKinds = ['start', 'end', 'actualStart', 'actualEnd'];
-      const matchedKind = orderedKinds.find(kind => items.some(item => item._calendarKind === kind));
-      return matchedKind ? `calendar-day-badge--${matchedKind}` : '';
-    }
-
-    function updateCalendarKindToggles() {
-      calendarKindButtons.forEach(button => {
-        const kind = button.dataset.calendarKind;
-        const isVisible = !!calendarVisibleKinds[kind];
-        button.classList.toggle('opacity-50', !isVisible);
-        button.classList.toggle('ring-2', isVisible);
-        button.classList.toggle('ring-offset-1', isVisible);
-        button.classList.toggle('ring-slate-200', isVisible);
-        button.setAttribute('aria-pressed', String(isVisible));
+      frozenColumns = frozenColumns.filter(id => visible.includes(id));
+      save(KEYS.FROZEN, frozenColumns);
+      let offset = 0;
+      visible.forEach(colId => {
+        const th = $('tableHeader').querySelector(`th[data-col="${colId}"]`), isFrozen = frozenColumns.includes(colId);
+        if (th) { th.classList.toggle('is-frozen', isFrozen); th.style.setProperty('--freeze-left', isFrozen ? `${offset}px` : '0px'); }
+        $('tableBody').querySelectorAll(`td[data-col="${colId}"]`).forEach(td => { td.classList.toggle('is-frozen', isFrozen); td.style.setProperty('--freeze-left', isFrozen ? `${offset}px` : '0px'); });
+        if (isFrozen && th) offset += th.getBoundingClientRect().width;
       });
     }
 
-    updateCalendarKindToggles();
+    $('tableHeader').oncontextmenu = (e) => {
+      e.preventDefault();
+      $('contextMenuItems').innerHTML = COLUMNS.filter(c => !(c.id === 'appName' && selectedAppId !== 'ALL')).map(c => `<label class="flex items-center gap-2 px-2 py-1.5 hover:bg-slate-100 dark:hover:bg-slate-800 rounded cursor-pointer"><input type="checkbox" data-col="${c.id}" ${columnVisibility[c.id] !== false ? 'checked' : ''} class="rounded text-indigo-600" /><span>${c.label}</span></label>`).join('');
+      $('contextMenuItems').querySelectorAll('input').forEach(inp => { inp.onchange = () => { columnVisibility[inp.dataset.col] = inp.checked; save(KEYS.COLS, columnVisibility); applyColumnVisibility(); }; });
+      $('columnContextMenu').style.left = `${e.clientX}px`; $('columnContextMenu').style.top = `${e.clientY}px`;
+      $('columnContextMenu').classList.remove('hidden');
+    };
+    document.addEventListener('click', (e) => { if (!$('columnContextMenu').contains(e.target)) $('columnContextMenu').classList.add('hidden'); });
+    $('restoreColumnsBtn').onclick = () => { columnVisibility = { ...DEFAULT_COLS }; frozenColumns = []; save(KEYS.COLS, columnVisibility); save(KEYS.FROZEN, frozenColumns); applyColumnVisibility(); $('columnContextMenu').classList.add('hidden'); };
 
-    function renderCalendar(items) {
-      const dateFields = [
-        { key: 'start', kind: 'start' },
-        { key: 'end', kind: 'end' },
-        { key: 'actualStart', kind: 'actualStart' },
-        { key: 'actualEnd', kind: 'actualEnd' }
-      ].filter(field => !!calendarVisibleKinds[field.kind]);
+    let syncingScroll = false;
+    $('tableScroll').addEventListener('scroll', () => {
+      requestAnimationFrame(applyColumnVisibility);
+      if (!syncingScroll && showTimeline) { syncingScroll = true; $('timelineScroll').scrollTop = $('tableScroll').scrollTop; requestAnimationFrame(() => { syncingScroll = false; }); }
+    }, { passive: true });
+    $('timelineScroll').addEventListener('scroll', () => {
+      if (!syncingScroll) { syncingScroll = true; $('tableScroll').scrollTop = $('timelineScroll').scrollTop; requestAnimationFrame(() => { syncingScroll = false; }); }
+    }, { passive: true });
 
-      if (!dateFields.length) {
-        calendarContent.innerHTML = `<div class="flex h-52 items-center justify-center rounded-xl border border-dashed border-slate-300 bg-slate-50 text-sm text-slate-500">No date types enabled. Turn on a Planned/Actual filter to display tasks.</div>`;
-        calendarPeriodLabel.textContent = 'No dates selected';
+    // Main Table & View Renderer
+    function renderPlanner() {
+      const q = $('searchInput').value.toLowerCase();
+      const apps = selectedAppId === 'ALL' ? uploadedApps : uploadedApps.filter(a => a.id === selectedAppId);
+      const allTasks = apps.flatMap(a => a.tasks.map(t => ({ ...t, _appId: a.id, _appName: a.name })));
+
+      if (!uploadedApps.length || !allTasks.length) {
+        ['tableWorkspace', 'calendarContainer', 'calendarToolbar', 'topBannerRow'].forEach(id => $(id).classList.add('hidden'));
+        $('emptyState').classList.remove('hidden');
         return;
       }
 
-      const datedItems = items.flatMap(item => {
-        return dateFields.flatMap(field => {
-          const value = item[field.key];
-          const parsed = value && value !== '-' ? parseCalendarDate(value) : null;
-          if (!parsed) return [];
-          return [{ ...item, _calendarDate: parsed, _calendarKind: field.kind }];
-        });
-      });
+      $('emptyState').classList.add('hidden');
+      $('topBannerRow').classList.replace('hidden', 'flex');
+      $('editHint').style.display = plannerView === 'calendar' ? 'none' : '';
+      $('currentViewLabel').textContent = selectedAppId === 'ALL' ? 'All Applications' : (apps[0]?.name || 'Selected App');
 
-      const query = searchInput.value.toLowerCase();
-      const visibleItems = datedItems.filter(item => !query || [item.task, item._appName, item.owner, item.comments, item.issues, item.dependency].some(value => String(value).toLowerCase().includes(query)));
-      const todayKey = calendarDateKey(new Date());
-
-      calendarViewButtons.forEach(button => {
-        const isActive = button.dataset.calendarView === calendarView;
-        button.classList.toggle('active', isActive);
-        button.setAttribute('aria-selected', String(isActive));
-      });
-
-      const monthFormatter = new Intl.DateTimeFormat('en-US', { month: 'long', year: 'numeric' });
-      const fullDateFormatter = new Intl.DateTimeFormat('en-US', { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' });
-      const weekStart = calendarStartOfWeek(calendarDate);
-      const weekEnd = new Date(weekStart);
-      weekEnd.setDate(weekEnd.getDate() + 6);
-
-      if (calendarView === 'day') {
-        calendarPeriodLabel.textContent = fullDateFormatter.format(calendarDate);
-        const dayItems = calendarItemsForDate(visibleItems, calendarDate);
-        calendarContent.innerHTML = `<div class="grid" style="grid-template-columns: 4rem minmax(0, 1fr)">${Array.from({ length: 24 }, (_, hour) => {
-          const slotItems = dayItems.filter(item => item._calendarDate.getHours() === hour);
-          return `<div class="calendar-grid-line calendar-muted border-b border-r px-2 py-3 text-right text-[10px] font-mono">${calendarHourLabel(hour)}</div><div class="calendar-grid-line calendar-slot border-b p-1">${slotItems.map(calendarEventCard).join('')}</div>`;
-        }).join('')}</div>`;
-        return;
-      }
-
-      if (calendarView === 'week') {
-        const weekMonthFormatter = new Intl.DateTimeFormat('en-US', { month: 'short', year: 'numeric' });
-        const weekStartLabel = weekMonthFormatter.format(weekStart);
-        const weekEndLabel = weekMonthFormatter.format(weekEnd);
-        calendarPeriodLabel.textContent = weekStartLabel === weekEndLabel ? weekStartLabel : `${weekStartLabel} - ${weekEndLabel}`;
-        const days = Array.from({ length: 7 }, (_, index) => {
-          const day = new Date(weekStart);
-          day.setDate(day.getDate() + index);
-          return day;
-        });
-        const header = `<div class="calendar-grid-line calendar-muted border-b p-2 text-center text-[10px] font-mono"></div>${days.map(day => {
-          const dayItems = calendarItemsForDate(visibleItems, day);
-          const dayBadgeClass = calendarBadgeClassForDate(dayItems);
-          return `<div class="calendar-grid-line border-b p-2 text-center text-xs font-semibold ${calendarDateKey(day) === todayKey ? 'calendar-day-number today' : 'calendar-day-number'}">${day.toLocaleDateString('en-US', { weekday: 'short' })}<br><span class="font-mono ${dayItems.length ? 'calendar-day-badge ' + dayBadgeClass : ''}">${day.getDate()}</span></div>`;
-        }).join('')}`;
-        const rows = Array.from({ length: 24 }, (_, hour) => `<div class="calendar-grid-line calendar-muted border-b border-r px-2 py-3 text-right text-[10px] font-mono">${calendarHourLabel(hour)}</div>${days.map(day => `<div class="calendar-grid-line calendar-slot border-b p-1">${calendarItemsForDate(visibleItems, day).filter(item => item._calendarDate.getHours() === hour).map(calendarEventCard).join('')}</div>`).join('')}`).join('');
-        calendarContent.innerHTML = `<div class="calendar-week-grid grid" style="grid-template-columns: 4rem repeat(7, minmax(0, 1fr))">${header}${rows}</div>`;
-        return;
-      }
-
-      if (calendarView === 'month') {
-        calendarPeriodLabel.textContent = monthFormatter.format(calendarDate);
-        const firstDay = new Date(calendarDate.getFullYear(), calendarDate.getMonth(), 1);
-        const gridStart = calendarStartOfWeek(firstDay);
-        const weekdays = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
-        const cells = Array.from({ length: 42 }, (_, index) => {
-          const day = new Date(gridStart);
-          day.setDate(day.getDate() + index);
-          const isCurrentMonth = day.getMonth() === calendarDate.getMonth();
-          const dayItems = calendarItemsForDate(visibleItems, day);
-          const dayBadgeClass = calendarBadgeClassForDate(dayItems);
-          const dayBadge = dayItems.length ? `<span class="calendar-day-badge ${dayBadgeClass}">${day.getDate()}</span>` : `<span class="font-mono">${day.getDate()}</span>`;
-          return `<div class="calendar-month-cell calendar-grid-line border-b border-r p-1.5 ${isCurrentMonth ? '' : 'opacity-40'}"><div class="calendar-day-number mb-1 text-right text-[11px] font-mono ${calendarDateKey(day) === todayKey ? 'today' : ''}">${dayBadge}</div>${dayItems.slice(0, 4).map(calendarEventCard).join('')}${dayItems.length > 4 ? `<div class="calendar-muted text-[10px]">+${dayItems.length - 4} more</div>` : ''}</div>`;
-        });
-        calendarContent.innerHTML = `<div class="calendar-month-grid grid grid-cols-7"><div class="calendar-muted col-span-7 grid grid-cols-7 border-b">${weekdays.map(day => `<div class="p-2 text-center text-[10px] font-mono">${day}</div>`).join('')}</div>${cells.join('')}</div>`;
-        return;
-      }
-
-      calendarPeriodLabel.textContent = String(calendarDate.getFullYear());
-      const miniMonths = Array.from({ length: 12 }, (_, month) => {
-        const firstDay = new Date(calendarDate.getFullYear(), month, 1);
-        const gridStart = calendarStartOfWeek(firstDay);
-        const cells = Array.from({ length: 42 }, (_, index) => {
-          const day = new Date(gridStart);
-          day.setDate(day.getDate() + index);
-          const isCurrentMonth = day.getMonth() === month;
-          const dayItems = calendarItemsForDate(visibleItems, day);
-          const hasEvents = dayItems.length > 0;
-          const dayBadgeClass = calendarBadgeClassForDate(dayItems);
-          return `<button data-calendar-date="${calendarDateKey(day)}" class="h-5 text-[9px] font-mono ${isCurrentMonth ? 'calendar-day-number' : 'calendar-muted'} ${hasEvents ? 'text-indigo-600 font-bold' : ''}">${isCurrentMonth ? (hasEvents ? `<span class="calendar-day-badge ${dayBadgeClass}" style="min-width:1.1rem;height:1.1rem;font-size:9px;">${day.getDate()}</span>` : day.getDate()) : ''}</button>`;
-        }).join('');
-        return `<div class="calendar-mini-month rounded-lg p-2"><button data-calendar-month="${month}" class="mb-2 text-xs font-semibold text-indigo-600">${new Intl.DateTimeFormat('en-US', { month: 'long' }).format(firstDay)}</button><div class="grid grid-cols-7 gap-0.5 text-center">${cells}</div></div>`;
-      });
-      calendarContent.innerHTML = `<div class="calendar-year-grid grid grid-cols-4 gap-3 p-3">${miniMonths.join('')}</div>`;
-    }
-
-    function animateTableRows(previousPositions) {
-      if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
-
-      tableBody.querySelectorAll('tr[data-row-id]').forEach(row => {
-        const rowId = row.dataset.rowId;
-        const currentTop = row.getBoundingClientRect().top;
-        const previousTop = previousPositions.get(rowId);
-
-        if (previousTop === undefined) {
-          row.animate(
-            [
-              { opacity: 0, transform: 'translateY(-6px)' },
-              { opacity: 1, transform: 'translateY(0)' }
-            ],
-            { duration: 180, easing: 'cubic-bezier(0.22, 1, 0.36, 1)' }
-          );
-          return;
-        }
-
-        const offset = previousTop - currentTop;
-        if (Math.abs(offset) > 1) {
-          row.animate(
-            [
-              { transform: `translateY(${offset}px)` },
-              { transform: 'translateY(0)' }
-            ],
-            { duration: 220, easing: 'cubic-bezier(0.22, 1, 0.36, 1)' }
-          );
-        }
-      });
-    }
-
-    function renderPlanner(animate = false) {
-      const query = searchInput.value.toLowerCase();
-      let appsToDisplay = uploadedApps;
-
-      if (selectedAppId !== 'ALL') {
-        appsToDisplay = uploadedApps.filter(app => app.id === selectedAppId);
-      }
-
-      let allTasksWithApp = [];
-      appsToDisplay.forEach(app => {
-        app.tasks.forEach(t => {
-          allTasksWithApp.push({ ...t, _appId: app.id, _appName: app.name });
-        });
-      });
-
-      if (uploadedApps.length === 0 || allTasksWithApp.length === 0) {
-        tableContainer.classList.add('hidden');
-        calendarContainer.classList.add('hidden');
-        calendarToolbar.classList.add('hidden');
-        calendarToolbar.classList.remove('flex');
-        activeViewBanner.classList.add('hidden');
-        activeViewBanner.classList.remove('flex');
-        emptyState.classList.remove('hidden');
-        return;
-      }
-
-      emptyState.classList.add('hidden');
-      activeViewBanner.classList.remove('hidden');
-      activeViewBanner.classList.add('flex');
-      const editHint = activeViewBanner.querySelector('p');
-      if (editHint) {
-        editHint.style.display = plannerView === 'calendar' ? 'none' : '';
-      }
-      tableContainer.classList.remove('hidden');
-
-      // Update View Label
       if (selectedAppId === 'ALL') {
-        currentViewLabel.textContent = `All Applications (${uploadedApps.length} Apps)`;
-      } else {
-        const activeAppObj = uploadedApps.find(a => a.id === selectedAppId);
-        currentViewLabel.textContent = activeAppObj ? activeAppObj.name : 'Selected Application';
+        const latest = uploadedApps.map(a => a.lastUpdated).filter(Boolean).pop() || '-';
+        $('activeAppMeta').innerHTML = `<span class="text-slate-400">Combined view across ${uploadedApps.length} apps (${allTasks.length} tasks)</span><span class="text-slate-300 dark:text-slate-700">|</span><span class="font-mono text-[10px] text-slate-400">Last Updated: ${latest}</span>`;
+      } else if (apps[0]) {
+        const a = apps[0];
+        $('activeAppMeta').innerHTML = `<span class="truncate max-w-md" title="${(a.description || '').replace(/"/g, '&quot;')}">${a.description || 'No description provided'}</span><span class="text-slate-300 dark:text-slate-700">|</span><span class="font-mono text-[10px] text-slate-400">Last Updated: ${a.lastUpdated || '-'}</span>`;
       }
 
-      tableContainer.classList.toggle('hidden', plannerView !== 'table');
-      calendarContainer.classList.toggle('hidden', plannerView !== 'calendar');
-      calendarToolbar.classList.toggle('hidden', plannerView !== 'calendar');
-      calendarToolbar.classList.toggle('flex', plannerView === 'calendar');
-      openCalendarBtn.textContent = plannerView === 'calendar' ? 'Table' : 'Calendar';
+      document.querySelectorAll('[data-planner-view]').forEach(btn => {
+        const active = btn.dataset.plannerView === plannerView;
+        btn.className = `px-2.5 py-1 rounded-md font-semibold transition-colors ${active ? 'bg-indigo-600 text-white shadow-sm' : 'text-slate-600 dark:text-slate-300 hover:text-indigo-600'}`;
+      });
+      $('toggleTimelineBtn').className = `rounded-md border px-2.5 py-1 text-xs font-semibold transition-colors ${showTimeline && plannerView === 'table' ? 'bg-indigo-600 text-white border-indigo-600 shadow-sm' : 'border-slate-300 dark:border-slate-700 text-slate-600 dark:text-slate-300 hover:border-indigo-400'}`;
 
-      if (plannerView === 'calendar') {
-        renderCalendar(allTasksWithApp);
-        return;
-      }
+      const isCal = plannerView === 'calendar';
+      $('tableWorkspace').classList.toggle('hidden', isCal);
+      $('tableWorkspace').classList.toggle('flex', !isCal);
+      $('tableContainer').className = `${showTimeline && !isCal ? 'w-3/4' : 'w-full'} bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 shadow-sm flex-1 flex flex-col overflow-hidden`;
+      $('timelineContainer').classList.toggle('hidden', !showTimeline || isCal);
+      $('timelineContainer').classList.toggle('flex', showTimeline && !isCal);
+      $('calendarContainer').classList.toggle('hidden', !isCal);
+      $('calendarToolbar').classList.toggle('hidden', !isCal);
+      $('calendarToolbar').classList.toggle('flex', isCal);
 
-      const previousPositions = new Map();
-      if (animate) {
-        tableBody.querySelectorAll('tr[data-row-id]').forEach(row => {
-          previousPositions.set(row.dataset.rowId, row.getBoundingClientRect().top);
-        });
-      }
+      if (isCal) return renderCalendar(allTasks);
 
-      tableBody.innerHTML = '';
       let rowCounter = 1;
+      let html = '';
+      const cellCls = 'h-9 px-3 border-b border-r border-slate-200 dark:border-slate-800 whitespace-nowrap';
+      const emptyCells = (cols, cls = '') => cols.map(c => `<td data-col="${c}" class="${cellCls} ${cls}"></td>`).join('');
 
-      STRUCTURE.forEach(phaseGroup => {
-        const isPhaseCollapsed = !!collapsedStates[phaseGroup.phase];
-        let phaseTotalDuration = 0;
-        let phaseStarts = [];
-        let phaseEnds = [];
-        let phaseActualStarts = [];
-        let phaseActualEnds = [];
+      STRUCTURE.forEach(pg => {
+        const pCollapsed = !!collapsedStates[pg.phase];
+        html += `
+          <tr onclick="toggleCollapse('${pg.phase}')" class="h-9 bg-slate-900 text-white font-bold cursor-pointer select-none whitespace-nowrap">
+            <td data-col="index" class="h-9 px-3 border-b border-r border-slate-800 text-center font-mono text-indigo-400">${rowCounter++}</td>
+            <td data-col="appName" class="h-9 px-3 border-b border-r border-slate-800"></td>
+            <td data-col="task" class="h-9 px-3 border-b border-r border-slate-800"><div class="flex items-center gap-2"><i data-lucide="${pCollapsed ? 'chevron-right' : 'chevron-down'}" class="w-3.5 h-3.5 text-indigo-400"></i><span>${pg.phase}</span></div></td>
+            <td data-col="dependency" class="h-9 px-3 border-b border-r border-slate-800"></td>
+            <td data-col="type" class="h-9 px-3 border-b border-r border-slate-800 font-mono text-[11px] text-slate-300">Phase</td>
+            ${emptyCells(['duration', 'start', 'end', 'actualStart', 'actualEnd', 'owner', 'backup', 'checker', 'comments', 'issues'], 'border-slate-800')}
+          </tr>`;
 
-        phaseGroup.subPhases.forEach(subPhaseName => {
-          const matchingTasks = allTasksWithApp.filter(t => (t.subPhase || t.SubPhase) === subPhaseName);
-          phaseTotalDuration += matchingTasks.reduce((sum, item) => sum + parseDuration(item.duration), 0);
-          matchingTasks.forEach(item => {
-            if (item.start && item.start !== '-') phaseStarts.push(item.start);
-            if (item.end && item.end !== '-') phaseEnds.push(item.end);
-            if (item.actualStart && item.actualStart !== '-') phaseActualStarts.push(item.actualStart);
-            if (item.actualEnd && item.actualEnd !== '-') phaseActualEnds.push(item.actualEnd);
-          });
-        });
+        if (!pCollapsed) {
+          pg.subPhases.forEach(sp => {
+            const spId = `${pg.phase}-${sp}`;
+            const spCollapsed = !!collapsedStates[spId];
+            const matching = allTasks.filter(t => t.subPhase === sp);
 
-        const earliestPhaseStart = phaseStarts.length ? phaseStarts.sort()[0] : '-';
-        const latestPhaseEnd = phaseEnds.length ? phaseEnds.sort().reverse()[0] : '-';
-        const earliestPhaseActualStart = phaseActualStarts.length ? phaseActualStarts.sort()[0] : '-';
-        const latestPhaseActualEnd = phaseActualEnds.length ? phaseActualEnds.sort().reverse()[0] : '-';
+            html += `
+              <tr onclick="toggleCollapse('${spId}')" class="h-9 bg-indigo-50/70 dark:bg-slate-800/90 font-bold cursor-pointer select-none whitespace-nowrap">
+                <td data-col="index" class="h-9 px-3 border-b border-r border-slate-200 dark:border-slate-700 text-center font-mono text-indigo-600 dark:text-indigo-400">${rowCounter++}</td>
+                <td data-col="appName" class="h-9 px-3 border-b border-r border-slate-200 dark:border-slate-700"></td>
+                <td data-col="task" class="h-9 px-3 pl-7 border-b border-r border-slate-200 dark:border-slate-700"><div class="flex items-center gap-1.5"><i data-lucide="${spCollapsed ? 'chevron-right' : 'chevron-down'}" class="w-3.5 h-3.5 text-indigo-600 dark:text-indigo-400"></i><span>${sp}</span><span class="text-[10px] bg-indigo-100 dark:bg-indigo-950 text-indigo-700 dark:text-indigo-300 font-mono px-1.5 rounded">(${matching.length} tasks)</span></div></td>
+                <td data-col="dependency" class="h-9 px-3 border-b border-r border-slate-200 dark:border-slate-700"></td>
+                <td data-col="type" class="h-9 px-3 border-b border-r border-slate-200 dark:border-slate-700 font-mono text-[11px] text-indigo-600 dark:text-indigo-400">Sub Phase</td>
+                ${emptyCells(['duration', 'start', 'end', 'actualStart', 'actualEnd', 'owner', 'backup', 'checker', 'comments', 'issues'], 'border-slate-200 dark:border-slate-700')}
+              </tr>`;
 
-        const phaseRowHTML = `
-          <tr data-row-id="phase-${phaseGroup.phase}" onclick="toggleCollapse('${phaseGroup.phase}')" class="bg-slate-900 hover:bg-slate-850 text-white font-bold text-xs border-b-2 border-slate-900 cursor-pointer select-none transition-colors">
-            <td data-col="index" class="py-1.5 px-3 border-r border-slate-800 text-center font-mono text-indigo-400 bg-slate-950">${rowCounter++}</td>
-            <td data-col="appName" class="py-1.5 px-3 border-r border-slate-800 text-[11px] text-slate-400 whitespace-nowrap">-</td>
-            <td data-col="task" class="py-1.5 px-3 border-r border-slate-800">
-              <div class="flex items-center space-x-2">
-                <i data-lucide="${isPhaseCollapsed ? 'chevron-right' : 'chevron-down'}" class="w-3.5 h-3.5 text-indigo-400"></i>
-                <span class="tracking-wide">${phaseGroup.phase}</span>
-              </div>
-            </td>
-            <td data-col="dependency" class="py-1.5 px-3 border-r border-slate-800 text-[11px] text-slate-400">-</td>
-            <td data-col="type" class="py-1.5 px-3 border-r border-slate-800 font-mono text-[11px] text-slate-300">Phase</td>
-            <td data-col="duration" class="py-1.5 px-3 border-r border-slate-800 font-mono text-indigo-300">-</td>
-            <td data-col="start" class="py-1.5 px-3 border-r border-slate-800 font-mono text-[11px] text-slate-200">-</td>
-            <td data-col="end" class="py-1.5 px-3 border-r border-slate-800 font-mono text-[11px] text-slate-200">-</td>
-            <td data-col="actualStart" class="py-1.5 px-3 border-r border-slate-800 font-mono text-[11px] text-slate-200">-</td>
-            <td data-col="actualEnd" class="py-1.5 px-3 border-r border-slate-800 font-mono text-[11px] text-slate-200">-</td>
-            <td data-col="owner" class="py-1.5 px-3 border-r border-slate-800 text-[11px] text-slate-400">-</td>
-            <td data-col="backup" class="py-1.5 px-3 border-r border-slate-800 text-[11px] text-slate-400">-</td>
-            <td data-col="checker" class="py-1.5 px-3 border-r border-slate-800 text-[11px] text-slate-400">-</td>
-            <td data-col="comments" class="py-1.5 px-3 border-r border-slate-800 text-[11px] text-slate-400">-</td>
-            <td data-col="issues" class="py-1.5 px-3 text-[11px] text-slate-400">-</td>
-          </tr>
-        `;
-        tableBody.insertAdjacentHTML('beforeend', phaseRowHTML);
-
-        if (!isPhaseCollapsed) {
-          phaseGroup.subPhases.forEach(subPhaseName => {
-            const subPhaseId = `${phaseGroup.phase}-${subPhaseName}`;
-            const isSubPhaseCollapsed = !!collapsedStates[subPhaseId];
-            const matchingTasks = allTasksWithApp.filter(t => (t.subPhase || t.SubPhase) === subPhaseName);
-
-            const subPhaseDuration = matchingTasks.reduce((sum, item) => sum + parseDuration(item.duration), 0);
-            let subPhaseStarts = [];
-            let subPhaseEnds = [];
-            let subPhaseActualStarts = [];
-            let subPhaseActualEnds = [];
-            matchingTasks.forEach(item => {
-              if (item.start && item.start !== '-') subPhaseStarts.push(item.start);
-              if (item.end && item.end !== '-') subPhaseEnds.push(item.end);
-              if (item.actualStart && item.actualStart !== '-') subPhaseActualStarts.push(item.actualStart);
-              if (item.actualEnd && item.actualEnd !== '-') subPhaseActualEnds.push(item.actualEnd);
-            });
-
-            const earliestSubStart = subPhaseStarts.length ? subPhaseStarts.sort()[0] : '-';
-            const latestSubEnd = subPhaseEnds.length ? subPhaseEnds.sort().reverse()[0] : '-';
-            const earliestSubActualStart = subPhaseActualStarts.length ? subPhaseActualStarts.sort()[0] : '-';
-            const latestSubActualEnd = subPhaseActualEnds.length ? subPhaseActualEnds.sort().reverse()[0] : '-';
-
-            const subPhaseRowHTML = `
-              <tr data-row-id="subphase-${subPhaseId}" onclick="toggleCollapse('${subPhaseId}')" class="bg-indigo-50/40 hover:bg-indigo-50/70 border-y border-indigo-100 font-bold text-slate-800 cursor-pointer select-none transition-colors text-xs">
-                <td data-col="index" class="py-1.5 px-3 border-r border-slate-200 text-center font-mono text-indigo-600 bg-indigo-100/30">${rowCounter++}</td>
-                <td data-col="appName" class="py-1.5 px-3 border-r border-slate-200 text-slate-400 font-bold whitespace-nowrap">-</td>
-                <td data-col="task" class="py-1.5 px-3 pl-8 border-r border-slate-200">
-                  <div class="flex items-center space-x-1.5">
-                    <i data-lucide="${isSubPhaseCollapsed ? 'chevron-right' : 'chevron-down'}" class="w-3.5 h-3.5 text-indigo-600"></i>
-                    <span class="font-bold">${subPhaseName}</span>
-                    <span class="text-[10px] bg-indigo-100 text-indigo-700 font-mono px-1.5 py-0.2 rounded font-bold">(${matchingTasks.length} tasks)</span>
-                  </div>
-                </td>
-                <td data-col="dependency" class="py-1.5 px-3 border-r border-slate-200 text-slate-400 font-bold">-</td>
-                <td data-col="type" class="py-1.5 px-3 border-r border-slate-200 font-mono text-[11px] text-indigo-600 font-bold">Sub Phase</td>
-                <td data-col="duration" class="py-1.5 px-3 border-r border-slate-200 font-mono font-bold text-indigo-700">-</td>
-                <td data-col="start" class="py-1.5 px-3 border-r border-slate-200 font-mono text-[11px] text-indigo-900 font-bold">-</td>
-                <td data-col="end" class="py-1.5 px-3 border-r border-slate-200 font-mono text-[11px] text-indigo-900 font-bold">-</td>
-                <td data-col="actualStart" class="py-1.5 px-3 border-r border-slate-200 font-mono text-[11px] text-indigo-900 font-bold">-</td>
-                <td data-col="actualEnd" class="py-1.5 px-3 border-r border-slate-200 font-mono text-[11px] text-indigo-900 font-bold">-</td>
-                <td data-col="owner" class="py-1.5 px-3 border-r border-slate-200 text-slate-400 font-bold">-</td>
-                <td data-col="backup" class="py-1.5 px-3 border-r border-slate-200 text-slate-400 font-bold">-</td>
-                <td data-col="checker" class="py-1.5 px-3 border-r border-slate-200 text-slate-400 font-bold">-</td>
-                <td data-col="comments" class="py-1.5 px-3 border-r border-slate-200 text-slate-400 font-bold">-</td>
-                <td data-col="issues" class="py-1.5 px-3 text-slate-400 font-bold">-</td>
-              </tr>
-            `;
-            tableBody.insertAdjacentHTML('beforeend', subPhaseRowHTML);
-
-            if (!isSubPhaseCollapsed) {
-              matchingTasks.forEach(item => {
-                const searchMatch = !query || [item.task, item.dependency, item.owner, item.backup, item.checker, item.comments, item.issues, item._appName].some(val => 
-                  String(val).toLowerCase().includes(query)
-                );
-
-                if (searchMatch) {
-                  const taskRowHTML = `
-                    <tr data-row-id="task-${item._appId}-${item.id}" data-app-id="${item._appId}" data-task-id="${item.id}" tabindex="0" class="task-row hover:bg-indigo-50/20 transition-colors border-b border-slate-100 text-xs cursor-pointer select-none">
-                      <td data-col="index" class="py-1.5 px-3 border-r border-slate-200 text-center font-mono text-slate-400 bg-slate-50/50">${rowCounter++}</td>
-                      <td data-col="appName" class="py-1.5 px-3 border-r border-slate-200 font-medium text-slate-800 whitespace-nowrap">${item._appName}</td>
-                      <td data-col="task" class="py-1.5 px-3 pl-6 border-r border-slate-200 text-slate-900 font-medium">${item.task}</td>
-                      <td data-col="dependency" class="py-1.5 px-3 border-r border-slate-200 text-slate-700">${item.dependency}</td>
-                      <td data-col="type" class="py-1.5 px-3 border-r border-slate-200 font-mono text-[11px] text-slate-600"><span class="bg-slate-100 border border-slate-200 px-1.5 py-0.5 rounded">${item.type || 'Task'}</span></td>
-                      <td data-col="duration" class="py-1.5 px-3 border-r border-slate-200 font-mono">${item.duration} mins</td>
-                      <td data-col="start" class="py-1.5 px-3 border-r border-slate-200 font-mono text-slate-700">${item.start}</td>
-                      <td data-col="end" class="py-1.5 px-3 border-r border-slate-200 font-mono text-slate-700">${item.end}</td>
-                      <td data-col="actualStart" class="py-1.5 px-3 border-r border-slate-200 font-mono text-slate-700">${item.actualStart}</td>
-                      <td data-col="actualEnd" class="py-1.5 px-3 border-r border-slate-200 font-mono text-slate-700">${item.actualEnd}</td>
-                      <td data-col="owner" class="py-1.5 px-3 border-r border-slate-200"><span class="bg-slate-100 border border-slate-200 px-1.5 py-0.5 rounded font-mono text-[10px]">${item.owner}</span></td>
-                      <td data-col="backup" class="py-1.5 px-3 border-r border-slate-200">${item.backup}</td>
-                      <td data-col="checker" class="py-1.5 px-3 border-r border-slate-200">${item.checker}</td>
-                      <td data-col="comments" class="py-1.5 px-3 border-r border-slate-200 text-slate-500">${item.comments}</td>
-                      <td data-col="issues" class="py-1.5 px-3 text-red-600">${item.issues}</td>
-                    </tr>
-                  `;
-                  tableBody.insertAdjacentHTML('beforeend', taskRowHTML);
-                }
+            if (!spCollapsed) {
+              matching.forEach(item => {
+                if (q && ![item.task, item.dependency, item.owner, item.backup, item.checker, item.comments, item.issues, item._appName].some(v => String(v).toLowerCase().includes(q))) return;
+                html += `
+                  <tr data-app-id="${item._appId}" data-task-id="${item.id}" tabindex="0" class="task-row h-9 bg-white dark:bg-slate-900 hover:bg-indigo-50/30 dark:hover:bg-slate-800/50 cursor-pointer select-none whitespace-nowrap">
+                    <td data-col="index" class="${cellCls} text-center font-mono text-slate-400">${rowCounter++}</td>
+                    <td data-col="appName" class="${cellCls} font-medium">${item._appName}</td>
+                    <td data-col="task" class="${cellCls} pl-6 font-medium max-w-[280px] truncate" title="${item.task}">${item.task}</td>
+                    <td data-col="dependency" class="${cellCls} max-w-[180px] truncate">${item.dependency}</td>
+                    <td data-col="type" class="${cellCls} font-mono text-[11px]"><span class="bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 px-1.5 py-0.5 rounded">${item.type || 'Task'}</span></td>
+                    <td data-col="duration" class="${cellCls} font-mono">${parseInt(item.duration, 10) || 0} mins</td>
+                    <td data-col="start" class="${cellCls} font-mono">${item.start}</td>
+                    <td data-col="end" class="${cellCls} font-mono">${item.end}</td>
+                    <td data-col="actualStart" class="${cellCls} font-mono">${item.actualStart}</td>
+                    <td data-col="actualEnd" class="${cellCls} font-mono">${item.actualEnd}</td>
+                    <td data-col="owner" class="${cellCls}">${item.owner}</td>
+                    <td data-col="backup" class="${cellCls}">${item.backup}</td>
+                    <td data-col="checker" class="${cellCls}">${item.checker}</td>
+                    <td data-col="comments" class="${cellCls} text-slate-500 max-w-[200px] truncate" title="${item.comments}">${item.comments}</td>
+                    <td data-col="issues" class="h-9 px-3 border-b border-slate-200 dark:border-slate-800 text-red-600 dark:text-red-400 max-w-[200px] truncate" title="${item.issues}">${item.issues}</td>
+                  </tr>`;
               });
             }
           });
         }
       });
 
+      $('tableBody').innerHTML = html;
       applyColumnVisibility();
+      if (showTimeline) renderTimeline(allTasks);
       lucide.createIcons();
-      if (animate) animateTableRows(previousPositions);
     }
 
-    // Cell Edit Routing
-    function getTaskObj(appId, taskId) {
+    function formatDateTimeForInput(val) {
+      if (!val || val === '-') return '';
+      const d = new Date(val);
+      if (Number.isNaN(d.getTime())) return '';
+      return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
+    }
+
+    const inputCls = "w-full bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-lg p-2 text-xs focus:outline-none focus:border-indigo-500";
+
+    // App Metadata Editor (Pencil Icon in Sidebar)
+    window.editAppMeta = (appId, e) => {
+      e.stopPropagation();
       const app = uploadedApps.find(a => a.id === appId);
-      if (!app) return null;
-      const task = app.tasks.find(t => t.id === taskId);
-      return { app, task };
-    }
-
-    function formatFriendlyDateTime(value) {
-      if (!value || value === '-') return '-';
-
-      const raw = String(value).trim();
-      if (!raw) return '-';
-
-      const pad = (num) => String(num).padStart(2, '0');
-      const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
-
-      if (/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}/.test(raw)) {
-        const date = new Date(raw);
-        if (!Number.isNaN(date.getTime())) {
-          let hours = date.getHours();
-          const minutes = pad(date.getMinutes());
-          const ampm = hours >= 12 ? 'PM' : 'AM';
-          hours = hours % 12 || 12;
-          return `${date.getDate()} ${monthNames[date.getMonth()]} ${date.getFullYear()} ${hours}:${minutes} ${ampm}`;
-        }
-      }
-
-      const friendlyMatch = raw.match(/^(\d{1,2})\s+([A-Za-z]{3})\s+(\d{4})\s+(\d{1,2}):(\d{2})\s*(AM|PM)$/i);
-      if (friendlyMatch) {
-        return raw;
-      }
-
-      const parsed = new Date(raw);
-      if (Number.isNaN(parsed.getTime())) return raw;
-
-      let hours = parsed.getHours();
-      const minutes = pad(parsed.getMinutes());
-      const ampm = hours >= 12 ? 'PM' : 'AM';
-      hours = hours % 12 || 12;
-      return `${parsed.getDate()} ${monthNames[parsed.getMonth()]} ${parsed.getFullYear()} ${hours}:${minutes} ${ampm}`;
-    }
-
-    function formatDateTimeForInput(value) {
-      if (!value || value === '-') return '';
-      const raw = String(value).trim();
-      if (!raw) return '';
-
-      if (/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}$/.test(raw)) return raw;
-      if (/^\d{4}-\d{2}-\d{2}$/.test(raw)) return `${raw}T00:00`;
-
-      const friendlyMatch = raw.match(/^(\d{1,2})\s+([A-Za-z]{3})\s+(\d{4})\s+(\d{1,2}):(\d{2})\s*(AM|PM)$/i);
-      if (friendlyMatch) {
-        const [, day, monthName, year, hours, minutes, meridiem] = friendlyMatch;
-        const monthIndex = new Date(`${monthName} 1, ${year}`).getMonth();
-        let hour = Number(hours);
-        if (meridiem.toUpperCase() === 'PM' && hour < 12) hour += 12;
-        if (meridiem.toUpperCase() === 'AM' && hour === 12) hour = 0;
-        const pad = (num) => String(num).padStart(2, '0');
-        return `${year}-${pad(monthIndex + 1)}-${pad(Number(day))}T${pad(hour)}:${pad(Number(minutes))}`;
-      }
-
-      const parsed = new Date(raw);
-      if (Number.isNaN(parsed.getTime())) return '';
-
-      const pad = (num) => String(num).padStart(2, '0');
-      return `${parsed.getFullYear()}-${pad(parsed.getMonth() + 1)}-${pad(parsed.getDate())}T${pad(parsed.getHours())}:${pad(parsed.getMinutes())}`;
-    }
-
-    function triggerCellEdit(targetTd, appId, taskId) {
-      const col = targetTd.getAttribute('data-col');
-      const { task } = getTaskObj(appId, taskId);
-      if (!task) return;
-
-      activeTaskRef = { appId, taskId, roleField: col };
-
-      if (col === 'task') {
-        editTaskDescInput.value = task.task || '';
-        editTaskDetailsInput.value = task.details || '';
-        editTaskModal.classList.remove('hidden');
-        editTaskDescInput.focus();
-      } else if (col === 'type') {
-        editTypeSelect.value = task.type || 'Task';
-        editTypeModal.classList.remove('hidden');
-        editTypeSelect.focus();
-      } else if (col === 'duration') {
-        editDurationInput.value = parseInt(task.duration, 10) || 0;
-        editDurationModal.classList.remove('hidden');
-        editDurationInput.focus();
-      } else if (['owner', 'backup', 'checker'].includes(col)) {
-        tempSelectedOwner = task[col] || '';
-        renderOwnerTeamList();
-        editOwnerModal.classList.remove('hidden');
-        ownerSearchInput.focus();
-      } else if (col === 'comments') {
-        editCommentInput.value = task.comments !== '-' ? task.comments : '';
-        editCommentModal.classList.remove('hidden');
-        editCommentInput.focus();
-      } else if (col === 'issues') {
-        editIssuesInput.value = task.issues !== '-' ? task.issues : '';
-        editIssuesModal.classList.remove('hidden');
-        editIssuesInput.focus();
-      } else if (['start', 'end', 'actualStart', 'actualEnd'].includes(col)) {
-        const labels = {
-          start: 'Planned Start',
-          end: 'Planned End',
-          actualStart: 'Actual Start',
-          actualEnd: 'Actual End'
-        };
-        editDateTimeTitle.textContent = `Edit ${labels[col]}`;
-        editDateTimeInput.value = formatDateTimeForInput(task[col]);
-        editDateTimeModal.classList.remove('hidden');
-        editDateTimeInput.focus();
-      }
-    }
-
-    tableBody.addEventListener('dblclick', (e) => {
-      const tr = e.target.closest('tr.task-row');
-      const td = e.target.closest('td');
-      if (tr && td) {
-        triggerCellEdit(td, tr.dataset.appId, tr.dataset.taskId);
-      }
-    });
-
-    tableBody.addEventListener('keydown', (e) => {
-      if (e.key !== 'Enter' && e.key !== ' ') return;
-      const tr = e.target.closest('tr.task-row');
-      if (!tr) return;
-      e.preventDefault();
-      const taskCell = tr.querySelector('td[data-col="task"]');
-      triggerCellEdit(taskCell, tr.dataset.appId, tr.dataset.taskId);
-    });
-
-    tableBody.addEventListener('contextmenu', (e) => {
-      const tr = e.target.closest('tr.task-row');
-      const td = e.target.closest('td');
-      if (tr && td) {
-        e.preventDefault();
-        triggerCellEdit(td, tr.dataset.appId, tr.dataset.taskId);
-      }
-    });
-
-    // Save Handlers
-    saveEditTaskBtn.addEventListener('click', () => {
-      const { task } = getTaskObj(activeTaskRef.appId, activeTaskRef.taskId);
-      if (task) {
-        task.task = editTaskDescInput.value.trim() || 'Unnamed Task';
-        task.details = editTaskDetailsInput.value.trim();
-        saveToStorage(STORAGE_KEY_APPS, uploadedApps);
-        renderPlanner();
-      }
-      editTaskModal.classList.add('hidden');
-    });
-
-    saveEditTypeBtn.addEventListener('click', () => {
-      const { task } = getTaskObj(activeTaskRef.appId, activeTaskRef.taskId);
-      if (task) {
-        task.type = editTypeSelect.value;
-        saveToStorage(STORAGE_KEY_APPS, uploadedApps);
-        renderPlanner();
-      }
-      editTypeModal.classList.add('hidden');
-    });
-
-    saveEditDurationBtn.addEventListener('click', () => {
-      const { task } = getTaskObj(activeTaskRef.appId, activeTaskRef.taskId);
-      if (task) {
-        const durationValue = Number.parseInt(editDurationInput.value, 10);
-        task.duration = Number.isNaN(durationValue) ? 0 : durationValue;
-        saveToStorage(STORAGE_KEY_APPS, uploadedApps);
-        renderPlanner();
-      }
-      editDurationModal.classList.add('hidden');
-    });
-
-    saveEditOwnerBtn.addEventListener('click', () => {
-      const { task } = getTaskObj(activeTaskRef.appId, activeTaskRef.taskId);
-      if (task) {
-        task[activeTaskRef.roleField] = tempSelectedOwner || '-';
-        saveToStorage(STORAGE_KEY_APPS, uploadedApps);
-        renderPlanner();
-      }
-      editOwnerModal.classList.add('hidden');
-    });
-
-    saveEditCommentBtn.addEventListener('click', () => {
-      const { task } = getTaskObj(activeTaskRef.appId, activeTaskRef.taskId);
-      if (task) {
-        task.comments = editCommentInput.value.trim() || '-';
-        saveToStorage(STORAGE_KEY_APPS, uploadedApps);
-        renderPlanner();
-      }
-      editCommentModal.classList.add('hidden');
-    });
-
-    saveEditIssuesBtn.addEventListener('click', () => {
-      const { task } = getTaskObj(activeTaskRef.appId, activeTaskRef.taskId);
-      if (task) {
-        task.issues = editIssuesInput.value.trim() || '-';
-        saveToStorage(STORAGE_KEY_APPS, uploadedApps);
-        renderPlanner();
-      }
-      editIssuesModal.classList.add('hidden');
-    });
-
-    saveEditDateTimeBtn.addEventListener('click', () => {
-      const { task } = getTaskObj(activeTaskRef.appId, activeTaskRef.taskId);
-      if (task) {
-        task[activeTaskRef.roleField] = editDateTimeInput.value
-          ? formatFriendlyDateTime(editDateTimeInput.value)
-          : '-';
-        saveToStorage(STORAGE_KEY_APPS, uploadedApps);
-        renderPlanner();
-      }
-      editDateTimeModal.classList.add('hidden');
-    });
-
-    // Cancel Handlers
-    cancelEditTaskBtn.addEventListener('click', () => editTaskModal.classList.add('hidden'));
-    cancelEditTypeBtn.addEventListener('click', () => editTypeModal.classList.add('hidden'));
-    cancelEditDurationBtn.addEventListener('click', () => editDurationModal.classList.add('hidden'));
-    cancelEditOwnerBtn.addEventListener('click', () => editOwnerModal.classList.add('hidden'));
-    cancelEditCommentBtn.addEventListener('click', () => editCommentModal.classList.add('hidden'));
-    cancelEditIssuesBtn.addEventListener('click', () => editIssuesModal.classList.add('hidden'));
-    cancelEditDateTimeBtn.addEventListener('click', () => editDateTimeModal.classList.add('hidden'));
-
-    ownerSearchInput.addEventListener('input', renderOwnerTeamList);
-
-    function renderOwnerTeamList() {
-      const query = ownerSearchInput.value.toLowerCase().trim();
-      ownerTeamList.innerHTML = '';
-
-      TEAMS_DATA.forEach(team => {
-        const matchingMembers = team.members.filter(m => 
-          m.toLowerCase().includes(query) || team.teamName.toLowerCase().includes(query)
-        );
-
-        if (matchingMembers.length > 0) {
-          const group = document.createElement('div');
-          group.className = 'space-y-1';
-          
-          let membersHTML = matchingMembers.map(m => `
-            <div onclick="selectOwnerMember('${m}')" class="px-2.5 py-1.5 rounded-lg text-xs cursor-pointer flex items-center justify-between hover:bg-indigo-50 transition-colors ${tempSelectedOwner === m ? 'bg-indigo-100 text-indigo-700 font-bold' : 'text-slate-700'}">
-              <span>${m}</span>
-              ${tempSelectedOwner === m ? '<i data-lucide="check" class="w-3.5 h-3.5 text-indigo-600"></i>' : ''}
-            </div>
-          `).join('');
-
-          group.innerHTML = `
-            <div class="text-[10px] font-bold text-slate-400 uppercase tracking-wider px-2 pt-1">${team.teamName}</div>
-            <div class="space-y-0.5">${membersHTML}</div>
-          `;
-          ownerTeamList.appendChild(group);
-        }
-      });
-
-      if (ownerTeamList.children.length === 0) {
-        ownerTeamList.innerHTML = `<p class="text-xs text-slate-400 text-center py-4">No matching teams or members found.</p>`;
-      }
-      lucide.createIcons();
-    }
-
-    window.selectOwnerMember = function(member) {
-      tempSelectedOwner = member;
-      renderOwnerTeamList();
+      if (!app) return;
+      activeTaskRef = { mode: 'appMeta', app };
+      $('editModalTitle').textContent = 'Edit Application Attributes';
+      $('editModalBody').innerHTML = `
+        <div><label class="block text-xs font-semibold mb-1">App Name</label><input id="edAppName" type="text" class="${inputCls}" value="${(app.name || '').replace(/"/g, '&quot;')}" /></div>
+        <div><label class="block text-xs font-semibold mb-1">Description</label><textarea id="edAppDesc" rows="3" class="${inputCls}">${app.description || ''}</textarea></div>
+        <div class="pt-1 border-t border-slate-200 dark:border-slate-800 flex items-center justify-between text-[11px] text-slate-500"><span>Last Updated (Auto)</span><span class="font-mono font-semibold text-slate-700 dark:text-slate-300">${app.lastUpdated || '-'}</span></div>`;
+      $('editModal').classList.remove('hidden');
+      $('edAppName').focus();
     };
 
-    clearAllBtn.addEventListener('click', () => {
-      openConfirmAction({
-        title: 'Clear entire plan?',
-        message: 'This will remove all loaded applications and their tasks from the planner. This action cannot be undone.',
-        confirmText: 'Clear Plan',
-        onConfirm: () => {
-          uploadedApps = [];
-          collapsedStates = {};
-          selectedAppId = 'ALL';
-          localStorage.removeItem(STORAGE_KEY_APPS);
-          localStorage.removeItem(STORAGE_KEY_STATES);
-          localStorage.removeItem(STORAGE_KEY_SELECTED_APP);
-          renderSidebar();
-          renderPlanner();
-        }
-      });
-    });
+    // Dropdown Settings Modal (Protected Display + Add Option Forms)
+    function renderSettingsModalBody() {
+      const chip = (v) => `<span class="inline-flex items-center px-2 py-0.5 rounded bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-xs font-medium">${v}</span>`;
+      $('editModalBody').innerHTML = `
+        <div class="space-y-2">
+          <label class="block text-xs font-semibold">Dependencies</label>
+          <div class="flex flex-wrap gap-1.5 p-2 rounded-lg border border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-950/40 max-h-28 overflow-y-auto">${depOptions.map(chip).join('')}</div>
+          <div class="flex gap-1.5">
+            <input id="newDepInput" type="text" placeholder="New dependency name..." class="${inputCls}" />
+            <button type="button" onclick="addDropdownOption('dep')" class="shrink-0 px-3 py-1.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg text-xs font-semibold">Add</button>
+          </div>
+        </div>
+        <div class="space-y-2 pt-2 border-t border-slate-100 dark:border-slate-800">
+          <label class="block text-xs font-semibold">Task Types</label>
+          <div class="flex flex-wrap gap-1.5 p-2 rounded-lg border border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-950/40 max-h-28 overflow-y-auto">${typeOptions.map(chip).join('')}</div>
+          <div class="flex gap-1.5">
+            <input id="newTypeInput" type="text" placeholder="New type name..." class="${inputCls}" />
+            <button type="button" onclick="addDropdownOption('type')" class="shrink-0 px-3 py-1.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg text-xs font-semibold">Add</button>
+          </div>
+        </div>`;
+    }
+    window.addDropdownOption = (kind) => {
+      const inp = $(kind === 'dep' ? 'newDepInput' : 'newTypeInput');
+      const val = inp?.value.trim();
+      if (!val) return;
+      if (kind === 'dep' && !depOptions.includes(val)) { depOptions.push(val); save(KEYS.DEPS, depOptions); }
+      if (kind === 'type' && !typeOptions.includes(val)) { typeOptions.push(val); save(KEYS.TYPES, typeOptions); }
+      renderSettingsModalBody();
+    };
+    $('openSettingsBtn').onclick = () => {
+      activeTaskRef = { mode: 'settings' };
+      $('editModalTitle').textContent = 'Dropdown Settings';
+      renderSettingsModalBody();
+      $('editModal').classList.remove('hidden');
+    };
 
-    searchInput.addEventListener('input', renderPlanner);
-    appSearchInput.addEventListener('input', renderSidebar);
-
-    openCalendarBtn.addEventListener('click', () => {
-      plannerView = plannerView === 'calendar' ? 'table' : 'calendar';
+    // Timeline Custom Date Range Modal
+    window.openTimelineRangeModal = (e) => {
+      if (e) e.stopPropagation();
+      activeTaskRef = { mode: 'timelineRange' };
+      $('editModalTitle').textContent = 'Timeline Date Range';
+      $('editModalBody').innerHTML = `
+        <div><label class="block text-xs font-semibold mb-1">Start Date</label><input id="tlStartInput" type="date" class="${inputCls}" value="${timelineRange.start || ''}" /></div>
+        <div><label class="block text-xs font-semibold mb-1">End Date</label><input id="tlEndInput" type="date" class="${inputCls}" value="${timelineRange.end || ''}" /></div>
+        <button type="button" onclick="resetTimelineRange()" class="text-xs text-indigo-600 dark:text-indigo-400 hover:underline font-medium">Reset to Auto (Task Dates)</button>`;
+      $('editModal').classList.remove('hidden');
+    };
+    window.resetTimelineRange = () => {
+      timelineRange = { start: '', end: '' };
+      save(KEYS.TL_RANGE, timelineRange);
+      $('editModal').classList.add('hidden');
       renderPlanner();
-    });
+    };
 
-    calendarViewButtons.forEach(button => {
-      button.addEventListener('click', () => {
-        plannerView = 'calendar';
-        calendarView = button.dataset.calendarView;
-        renderPlanner();
-      });
-    });
+    // Unified Cell Editor
+    function triggerCellEdit(td, appId, taskId) {
+      const col = td.dataset.col;
+      const app = uploadedApps.find(a => a.id === appId);
+      const task = app?.tasks.find(t => t.id === taskId);
+      if (!task || ['index', 'appName'].includes(col)) return;
 
-    calendarTodayBtn.addEventListener('click', () => {
-      calendarDate = new Date();
-      calendarView = 'day';
-      plannerView = 'calendar';
-      renderPlanner();
-    });
+      activeTaskRef = { mode: 'cell', app, task, col };
+      const body = $('editModalBody');
 
-    calendarPrevBtn.addEventListener('click', () => {
-      calendarDate = new Date(calendarDate);
-      if (calendarView === 'day') calendarDate.setDate(calendarDate.getDate() - 1);
-      if (calendarView === 'week') calendarDate.setDate(calendarDate.getDate() - 7);
-      if (calendarView === 'month') calendarDate = new Date(calendarDate.getFullYear(), calendarDate.getMonth() - 1, 1);
-      if (calendarView === 'year') calendarDate = new Date(calendarDate.getFullYear() - 1, 0, 1);
-      renderPlanner();
-    });
-
-    calendarNextBtn.addEventListener('click', () => {
-      calendarDate = new Date(calendarDate);
-      if (calendarView === 'day') calendarDate.setDate(calendarDate.getDate() + 1);
-      if (calendarView === 'week') calendarDate.setDate(calendarDate.getDate() + 7);
-      if (calendarView === 'month') calendarDate = new Date(calendarDate.getFullYear(), calendarDate.getMonth() + 1, 1);
-      if (calendarView === 'year') calendarDate = new Date(calendarDate.getFullYear() + 1, 0, 1);
-      renderPlanner();
-    });
-
-    calendarContent.addEventListener('click', (event) => {
-      const monthButton = event.target.closest('[data-calendar-month]');
-      const dateButton = event.target.closest('[data-calendar-date]');
-      if (monthButton) {
-        calendarDate = new Date(calendarDate.getFullYear(), Number(monthButton.dataset.calendarMonth), 1);
-        calendarView = 'month';
-        renderPlanner();
-      } else if (dateButton) {
-        const selectedDate = parseCalendarDate(dateButton.dataset.calendarDate);
-        if (selectedDate) {
-          calendarDate = selectedDate;
-          calendarView = 'day';
-          renderPlanner();
-        }
+      if (col === 'task') {
+        $('editModalTitle').textContent = 'Edit Task';
+        body.innerHTML = `
+          <div><label class="block text-xs font-semibold mb-1">Description</label><input id="edTask" type="text" class="${inputCls}" value="${task.task.replace(/"/g, '&quot;')}" /></div>
+          <div><label class="block text-xs font-semibold mb-1">Details</label><textarea id="edDetails" rows="3" class="${inputCls}">${task.details || ''}</textarea></div>`;
+      } else if (col === 'dependency') {
+        $('editModalTitle').textContent = 'Select Dependency';
+        const opts = Array.from(new Set([...depOptions, task.dependency || '-']));
+        body.innerHTML = `<select id="edVal" class="${inputCls}">${opts.map(o => `<option value="${o.replace(/"/g, '&quot;')}" ${task.dependency === o ? 'selected' : ''}>${o}</option>`).join('')}</select>`;
+      } else if (col === 'type') {
+        $('editModalTitle').textContent = 'Select Task Type';
+        const opts = Array.from(new Set([...typeOptions, task.type || 'Task']));
+        body.innerHTML = `<select id="edVal" class="${inputCls}">${opts.map(o => `<option value="${o.replace(/"/g, '&quot;')}" ${task.type === o ? 'selected' : ''}>${o}</option>`).join('')}</select>`;
+      } else if (col === 'duration') {
+        $('editModalTitle').textContent = 'Edit Duration (minutes)';
+        body.innerHTML = `<input id="edVal" type="number" min="0" class="${inputCls}" value="${parseInt(task.duration, 10) || 0}" />`;
+      } else if (['owner', 'backup', 'checker'].includes(col)) {
+        $('editModalTitle').textContent = `Select ${col.charAt(0).toUpperCase() + col.slice(1)}`;
+        tempSelectedOwner = task[col] || '';
+        body.innerHTML = `
+          <input id="ownerSearch" type="text" placeholder="Search team or member..." class="${inputCls}" />
+          <div id="ownerList" class="max-h-56 overflow-y-auto border border-slate-200 dark:border-slate-700 rounded-lg p-2 space-y-2"></div>`;
+        $('ownerSearch').oninput = renderOwnerList;
+        renderOwnerList();
+      } else if (['start', 'end', 'actualStart', 'actualEnd'].includes(col)) {
+        $('editModalTitle').textContent = `Edit ${col}`;
+        body.innerHTML = `<input id="edVal" type="datetime-local" class="${inputCls}" value="${formatDateTimeForInput(task[col])}" />`;
+      } else if (['comments', 'issues'].includes(col)) {
+        $('editModalTitle').textContent = `Edit ${col.charAt(0).toUpperCase() + col.slice(1)}`;
+        body.innerHTML = `<textarea id="edVal" rows="4" class="${inputCls}">${task[col] !== '-' ? task[col] : ''}</textarea>`;
       }
-    });
 
-    // Initial Render
+      $('editModal').classList.remove('hidden');
+      body.querySelector('input, textarea, select')?.focus();
+    }
+
+    function renderOwnerList() {
+      const q = ($('ownerSearch')?.value || '').toLowerCase().trim();
+      let html = '';
+      TEAMS_DATA.forEach(t => {
+        const members = t.members.filter(m => m.toLowerCase().includes(q) || t.teamName.toLowerCase().includes(q));
+        if (members.length) {
+          html += `<div class="text-[10px] font-bold text-slate-400 uppercase px-2">${t.teamName}</div>` +
+            members.map(m => `<div onclick="selectOwnerMember('${m}')" class="px-2.5 py-1.5 rounded-lg text-xs cursor-pointer flex justify-between items-center ${tempSelectedOwner === m ? 'bg-indigo-100 dark:bg-indigo-950 text-indigo-700 dark:text-indigo-300 font-bold' : 'hover:bg-slate-100 dark:hover:bg-slate-800'}"><span>${m}</span>${tempSelectedOwner === m ? '✓' : ''}</div>`).join('');
+        }
+      });
+      $('ownerList').innerHTML = html || `<p class="text-xs text-slate-400 text-center py-4">No matching members.</p>`;
+    }
+    window.selectOwnerMember = (m) => { tempSelectedOwner = m; renderOwnerList(); };
+
+    $('cancelEditBtn').onclick = () => $('editModal').classList.add('hidden');
+    $('saveEditBtn').onclick = () => {
+      if (!activeTaskRef) return;
+      if (activeTaskRef.mode === 'settings') {
+        addDropdownOption('dep');
+        addDropdownOption('type');
+        $('editModal').classList.add('hidden');
+        return;
+      }
+      if (activeTaskRef.mode === 'timelineRange') {
+        timelineRange = { start: $('tlStartInput').value, end: $('tlEndInput').value };
+        save(KEYS.TL_RANGE, timelineRange);
+        $('editModal').classList.add('hidden');
+        renderPlanner();
+        return;
+      }
+      if (activeTaskRef.mode === 'appMeta') {
+        const { app } = activeTaskRef;
+        app.name = $('edAppName').value.trim() || app.name;
+        app.description = $('edAppDesc').value.trim() || 'No description provided';
+        touchApp(app);
+        save(KEYS.APPS, uploadedApps);
+        $('editModal').classList.add('hidden');
+        renderSidebar();
+        renderPlanner();
+        return;
+      }
+      const { app, task, col } = activeTaskRef;
+      if (col === 'task') {
+        task.task = $('edTask').value.trim() || 'Unnamed Task';
+        task.details = $('edDetails').value.trim();
+      } else if (col === 'duration') {
+        task.duration = parseInt($('edVal').value, 10) || 0;
+      } else if (['owner', 'backup', 'checker'].includes(col)) {
+        task[col] = tempSelectedOwner || '-';
+      } else if (['start', 'end', 'actualStart', 'actualEnd'].includes(col)) {
+        task[col] = $('edVal').value ? formatFriendlyDateTime($('edVal').value) : '-';
+      } else {
+        task[col] = $('edVal').value.trim() || '-';
+      }
+      touchApp(app);
+      save(KEYS.APPS, uploadedApps);
+      $('editModal').classList.add('hidden');
+      renderSidebar();
+      renderPlanner();
+    };
+
+    $('tableBody').ondblclick = (e) => {
+      const tr = e.target.closest('tr.task-row'), td = e.target.closest('td');
+      if (tr && td) triggerCellEdit(td, tr.dataset.appId, tr.dataset.taskId);
+    };
+    $('tableBody').oncontextmenu = (e) => {
+      const tr = e.target.closest('tr.task-row'), td = e.target.closest('td');
+      if (tr && td) { e.preventDefault(); triggerCellEdit(td, tr.dataset.appId, tr.dataset.taskId); }
+    };
+    $('tableBody').onkeydown = (e) => {
+      if (e.key !== 'Enter' && e.key !== ' ') return;
+      const tr = e.target.closest('tr.task-row');
+      if (tr) { e.preventDefault(); triggerCellEdit(tr.querySelector('td[data-col="task"]'), tr.dataset.appId, tr.dataset.taskId); }
+    };
+
+    // Excel Export
+    function exportCurrentTableData() {
+      const exportName = selectedAppId === 'ALL' ? 'all-applications' : (uploadedApps.find(a => a.id === selectedAppId)?.name || 'selected-app').replace(/[^a-z0-9-_]+/gi, '-').toLowerCase();
+      const apps = selectedAppId === 'ALL' ? uploadedApps : uploadedApps.filter(a => a.id === selectedAppId);
+      const wb = XLSX.utils.book_new();
+      const widthMap = { task: 40, comments: 40, issues: 40, appName: 22, default: 18 };
+
+      apps.forEach(app => {
+        const rows = (app.tasks || []).map(t => ({
+          'App Name': app.name, Task: t.task, Dependency: t.dependency, Type: t.type,
+          Duration: t.duration, 'Planned Start': t.start, 'Planned End': t.end,
+          'Actual Start': t.actualStart, 'Actual End': t.actualEnd,
+          Owner: t.owner, Backup: t.backup, Checker: t.checker,
+          'Sub Phase': t.subPhase, Comments: t.comments, Issues: t.issues
+        }));
+        const ws = XLSX.utils.json_to_sheet(rows);
+        ws['!cols'] = Object.keys(rows[0] || {}).map(k => ({ wch: widthMap[k.toLowerCase()] || widthMap.default }));
+        XLSX.utils.book_append_sheet(wb, ws, (app.name || 'Application').replace(/[^\w\s-]/g, ' ').trim().slice(0, 31) || 'Application');
+      });
+      if (!apps.length) XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet([{ AppName: 'No Data', Message: 'No tasks available for export.' }]), 'No Data');
+      XLSX.writeFile(wb, `edr-planner-${exportName}.xlsx`);
+    }
+    $('exportJsonBtn').onclick = () => openConfirm({ title: 'Export workbook?', message: 'Generate an .xlsx file with the current planner data?', confirmText: 'Export', onConfirm: exportCurrentTableData });
+
+    // Calendar Engine
+    const dateKey = (d) => `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
+    const startOfWeek = (d) => { const s = new Date(d.getFullYear(), d.getMonth(), d.getDate()); const day = s.getDay(); s.setDate(s.getDate() + (day === 0 ? -6 : 1 - day)); return s; };
+    const hourLabel = (h) => `${h % 12 || 12}:00 ${h >= 12 ? 'PM' : 'AM'}`;
+    const shortHour = (h) => `${h % 12 || 12} ${h >= 12 ? 'PM' : 'AM'}`;
+
+    function updateKindButtons() {
+      document.querySelectorAll('[data-calendar-kind]').forEach(btn => {
+        const active = !!calendarVisibleKinds[btn.dataset.calendarKind];
+        btn.classList.toggle('opacity-40', !active); btn.classList.toggle('ring-2', active);
+      });
+    }
+    document.querySelectorAll('[data-calendar-kind]').forEach(btn => {
+      btn.onclick = () => {
+        const k = btn.dataset.calendarKind;
+        Object.keys(calendarVisibleKinds).forEach(key => calendarVisibleKinds[key] = key === k);
+        updateKindButtons(); if (plannerView === 'calendar') renderPlanner();
+      };
+    });
+    updateKindButtons();
+
+    function renderCalendar(items) {
+      const activeKinds = Object.keys(calendarVisibleKinds).filter(k => calendarVisibleKinds[k]);
+      const q = $('searchInput').value.toLowerCase();
+      const dated = items.flatMap(it => activeKinds.flatMap(k => {
+        const d = it[k] && it[k] !== '-' ? new Date(it[k]) : null;
+        return d && !Number.isNaN(d.getTime()) ? [{ ...it, _date: d, _kind: k }] : [];
+      })).filter(it => !q || [it.task, it._appName, it.owner, it.comments, it.issues].some(v => String(v).toLowerCase().includes(q)));
+
+      document.querySelectorAll('[data-calendar-view]').forEach(b => {
+        const act = b.dataset.calendarView === calendarView;
+        b.className = `rounded px-2 py-1 font-semibold ${act ? 'bg-indigo-600 text-white' : 'text-slate-500'}`;
+      });
+
+      const forDate = (d) => dated.filter(i => dateKey(i._date) === dateKey(d));
+      const card = (i) => `<div class="cal-${i._kind} mb-1 rounded px-1.5 py-1 text-[10px] border-l-2 truncate" title="${i._appName}: ${i.task}"><strong>${i._appName}</strong>: ${i.task}</div>`;
+
+      if (calendarView === 'day') {
+        $('calendarPeriodLabel').textContent = calendarDate.toDateString();
+        const dayItems = forDate(calendarDate);
+        $('calendarContent').innerHTML = `<div class="grid" style="grid-template-columns: 4.5rem 1fr">${Array.from({ length: 24 }, (_, h) => `<div class="border-b border-r border-slate-200 dark:border-slate-800 px-2 py-3 text-right text-[10px] font-mono text-slate-400">${hourLabel(h)}</div><div class="border-b border-slate-200 dark:border-slate-800 p-1 min-h-[3rem]">${dayItems.filter(i => i._date.getHours() === h).map(card).join('')}</div>`).join('')}</div>`;
+      } else if (calendarView === 'week') {
+        const ws = startOfWeek(calendarDate), days = Array.from({ length: 7 }, (_, i) => { const d = new Date(ws); d.setDate(d.getDate() + i); return d; });
+        $('calendarPeriodLabel').textContent = `${days[0].toLocaleDateString('en-US', { month: 'short', day: 'numeric' })} - ${days[6].toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}`;
+        const hdr = `<div class="border-b border-r border-slate-200 dark:border-slate-800"></div>` + days.map(d => `<div class="border-b border-r border-slate-200 dark:border-slate-800 p-2 text-center text-xs font-semibold">${d.toLocaleDateString('en-US', { weekday: 'short' })} <span class="font-mono">${d.getDate()}</span></div>`).join('');
+        const rows = Array.from({ length: 24 }, (_, h) => `<div class="border-b border-r border-slate-200 dark:border-slate-800 px-2 py-3 text-right text-[10px] font-mono text-slate-400">${hourLabel(h)}</div>` + days.map(d => `<div class="border-b border-r border-slate-200 dark:border-slate-800 p-1 min-h-[3rem]">${forDate(d).filter(i => i._date.getHours() === h).map(card).join('')}</div>`).join('')).join('');
+        $('calendarContent').innerHTML = `<div class="grid min-w-[700px]" style="grid-template-columns: 4.5rem repeat(7, minmax(0, 1fr))">${hdr}${rows}</div>`;
+      } else if (calendarView === 'month') {
+        $('calendarPeriodLabel').textContent = calendarDate.toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
+        const gs = startOfWeek(new Date(calendarDate.getFullYear(), calendarDate.getMonth(), 1));
+        const cells = Array.from({ length: 42 }, (_, idx) => {
+          const d = new Date(gs); d.setDate(d.getDate() + idx); const di = forDate(d);
+          return `<div class="min-h-[6.5rem] border-b border-r border-slate-200 dark:border-slate-800 p-1.5 ${d.getMonth() === calendarDate.getMonth() ? '' : 'opacity-40'}"><div class="text-right text-[11px] font-mono mb-1">${di.length ? `<span class="cal-badge cal-${di[0]._kind}">${d.getDate()}</span>` : d.getDate()}</div>${di.slice(0, 3).map(card).join('')}${di.length > 3 ? `<div class="text-[10px] text-slate-400">+${di.length - 3} more</div>` : ''}</div>`;
+        }).join('');
+        $('calendarContent').innerHTML = `<div class="grid grid-cols-7 min-w-[600px]">${['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'].map(w => `<div class="p-2 text-center text-[10px] font-mono border-b border-slate-200 dark:border-slate-800 text-slate-400">${w}</div>`).join('')}${cells}</div>`;
+      } else {
+        $('calendarPeriodLabel').textContent = String(calendarDate.getFullYear());
+        $('calendarContent').innerHTML = `<div class="grid grid-cols-2 md:grid-cols-4 gap-3 p-3">${Array.from({ length: 12 }, (_, m) => {
+          const fd = new Date(calendarDate.getFullYear(), m, 1), gs = startOfWeek(fd);
+          const days = Array.from({ length: 42 }, (_, i) => {
+            const d = new Date(gs); d.setDate(d.getDate() + i);
+            if (d.getMonth() !== m) return `<span></span>`;
+            const di = forDate(d);
+            return `<button data-cal-date="${dateKey(d)}" class="h-5 text-[10px] font-mono rounded ${di.length ? `cal-${di[0]._kind} font-bold` : ''}">${d.getDate()}</button>`;
+          }).join('');
+          return `<div class="border border-slate-200 dark:border-slate-800 rounded-lg p-2"><button data-cal-month="${m}" class="mb-1 text-xs font-bold text-indigo-600 dark:text-indigo-400">${fd.toLocaleDateString('en-US', { month: 'long' })}</button><div class="grid grid-cols-7 gap-0.5 text-center">${days}</div></div>`;
+        }).join('')}</div>`;
+      }
+    }
+
+    // Timeline Engine (Side-by-Side 25% Section: Multi-Day Range + Thin 12 AM Columns + Sharp-Edged Bars)
+    function renderTimeline(allTasks) {
+      const q = $('searchInput').value.toLowerCase();
+      const validTimestamps = allTasks.flatMap(t => [new Date(t.start).getTime(), new Date(t.end).getTime()]).filter(ms => !Number.isNaN(ms));
+      const autoMin = validTimestamps.length ? new Date(Math.min(...validTimestamps)) : new Date();
+      const autoMax = validTimestamps.length ? new Date(Math.max(...validTimestamps)) : new Date();
+
+      const customStart = timelineRange.start ? new Date(timelineRange.start + 'T00:00:00') : null;
+      const customEnd = timelineRange.end ? new Date(timelineRange.end + 'T00:00:00') : null;
+      const minDate = customStart && !Number.isNaN(customStart.getTime()) ? customStart : autoMin;
+      const maxDate = customEnd && !Number.isNaN(customEnd.getTime()) && customEnd >= minDate ? customEnd : autoMax;
+
+      const startDay = new Date(minDate.getFullYear(), minDate.getMonth(), minDate.getDate());
+      const endDay = new Date(Math.max(startDay.getTime(), new Date(maxDate.getFullYear(), maxDate.getMonth(), maxDate.getDate()).getTime()));
+      const days = [];
+      for (let d = new Date(startDay); d <= endDay && days.length < 31; d.setDate(d.getDate() + 1)) days.push(new Date(d));
+      if (!days.length) days.push(new Date(startDay));
+
+      const totalHours = days.length * 24, originMs = startDay.getTime(), totalMs = totalHours * 3600000;
+
+      const dateHeaders = days.map((d, idx) => `<th colspan="24" class="h-7 px-1.5 text-left font-bold text-xs text-indigo-700 dark:text-indigo-300 bg-indigo-50/90 dark:bg-slate-800 border-b border-r border-slate-300 dark:border-slate-700 whitespace-nowrap"><div class="inline-flex items-center gap-2"><span>${d.toLocaleDateString('en-US', { weekday: 'short', day: 'numeric', month: 'short', year: 'numeric' })}</span>${idx === 0 ? `<button type="button" onclick="openTimelineRangeModal(event)" class="px-1.5 py-0.5 rounded bg-white dark:bg-slate-900 border border-indigo-200 dark:border-indigo-700 text-[10px] font-semibold text-indigo-600 dark:text-indigo-300 hover:border-indigo-400">Date Range</button>` : ''}</div></th>`).join('');
+      const hourHeaders = days.map(() => Array.from({ length: 24 }, (_, h) => `<th class="h-7 w-8 min-w-[32px] max-w-[32px] px-0 text-center font-mono text-[9px] tracking-tighter text-slate-600 dark:text-slate-300 bg-slate-100 dark:bg-slate-800/90 border-b border-r border-slate-200 dark:border-slate-700 whitespace-nowrap">${shortHour(h)}</th>`).join('')).join('');
+      const gridBg = `<div class="flex h-full">${Array.from({ length: totalHours }, (_, i) => `<div class="w-8 min-w-[32px] max-w-[32px] h-full border-r ${i % 24 === 23 ? 'border-slate-300 dark:border-slate-600' : 'border-slate-100 dark:border-slate-800'}"></div>`).join('')}</div>`;
+
+      let bodyHtml = '';
+      STRUCTURE.forEach(pg => {
+        const pCollapsed = !!collapsedStates[pg.phase];
+        bodyHtml += `<tr onclick="toggleCollapse('${pg.phase}')" class="h-9 bg-slate-900 cursor-pointer select-none"><td colspan="${totalHours}" class="h-9 border-b border-slate-800 bg-slate-900"></td></tr>`;
+        if (!pCollapsed) {
+          pg.subPhases.forEach(sp => {
+            const spId = `${pg.phase}-${sp}`, spCollapsed = !!collapsedStates[spId], matching = allTasks.filter(t => t.subPhase === sp);
+            bodyHtml += `<tr onclick="toggleCollapse('${spId}')" class="h-9 bg-indigo-50/70 dark:bg-slate-800/90 cursor-pointer select-none"><td colspan="${totalHours}" class="h-9 border-b border-slate-200 dark:border-slate-700"></td></tr>`;
+            if (!spCollapsed) {
+              matching.forEach(item => {
+                if (q && ![item.task, item.dependency, item.owner, item.backup, item.checker, item.comments, item.issues, item._appName].some(v => String(v).toLowerCase().includes(q))) return;
+                const sMs = new Date(item.start).getTime(), rawEndMs = new Date(item.end).getTime();
+                const durMs = Math.max(parseInt(item.duration, 10) || 15, 10) * 60000;
+                const eMs = !Number.isNaN(rawEndMs) && rawEndMs > sMs ? rawEndMs : sMs + durMs;
+                let barHtml = '';
+                if (!Number.isNaN(sMs)) {
+                  const leftPct = Math.max(0, Math.min(100, ((sMs - originMs) / totalMs) * 100));
+                  const widthPct = Math.max(0.4, Math.min(100 - leftPct, ((eMs - sMs) / totalMs) * 100));
+                  barHtml = `<div class="absolute top-2 bottom-2 rounded-none bg-gradient-to-r from-indigo-600 to-violet-500 shadow-sm border border-indigo-400/40" style="left: ${leftPct}%; width: ${widthPct}%;" title="${item._appName}: ${item.task}&#10;Planned: ${item.start} → ${item.end} (${item.duration} mins)"></div>`;
+                }
+                bodyHtml += `<tr data-app-id="${item._appId}" data-task-id="${item.id}" class="task-row h-9 bg-white dark:bg-slate-900 hover:bg-indigo-50/20 dark:hover:bg-slate-800/40 cursor-pointer select-none"><td data-col="start" colspan="${totalHours}" class="h-9 p-0 border-b border-slate-200 dark:border-slate-800 relative">${gridBg}${barHtml}</td></tr>`;
+              });
+            }
+          });
+        }
+      });
+
+      $('timelineTable').innerHTML = `<thead class="sticky top-0 z-20 select-none"><tr class="h-7">${dateHeaders}</tr><tr class="h-7">${hourHeaders}</tr></thead><tbody>${bodyHtml}</tbody>`;
+      if (validTimestamps.length && !$('timelineScroll').dataset.scrolled) {
+        $('timelineScroll').scrollLeft = Math.max(0, (Math.min(...validTimestamps) - originMs) / 3600000 - 1) * 32;
+        $('timelineScroll').dataset.scrolled = '1';
+      }
+    }
+
+    $('timelineTable').ondblclick = (e) => { const tr = e.target.closest('tr.task-row'), td = e.target.closest('td[data-col]'); if (tr && td) triggerCellEdit(td, tr.dataset.appId, tr.dataset.taskId); };
+    $('timelineTable').oncontextmenu = (e) => { const tr = e.target.closest('tr.task-row'), td = e.target.closest('td[data-col]'); if (tr && td) { e.preventDefault(); triggerCellEdit(td, tr.dataset.appId, tr.dataset.taskId); } };
+
+    // Navigation & Global Events
+    $('toggleTimelineBtn').onclick = () => { if (plannerView !== 'table') { plannerView = 'table'; showTimeline = true; } else showTimeline = !showTimeline; renderPlanner(); };
+    document.querySelectorAll('[data-planner-view]').forEach(btn => { btn.onclick = () => { plannerView = btn.dataset.plannerView; renderPlanner(); }; });
+    document.querySelectorAll('[data-calendar-view]').forEach(b => b.onclick = () => { plannerView = 'calendar'; calendarView = b.dataset.calendarView; renderPlanner(); });
+    $('calendarTodayBtn').onclick = () => { calendarDate = new Date(); calendarView = 'day'; plannerView = 'calendar'; renderPlanner(); };
+    $('calendarPrevBtn').onclick = () => {
+      if (calendarView === 'day') calendarDate.setDate(calendarDate.getDate() - 1);
+      else if (calendarView === 'week') calendarDate.setDate(calendarDate.getDate() - 7);
+      else if (calendarView === 'month') calendarDate = new Date(calendarDate.getFullYear(), calendarDate.getMonth() - 1, 1);
+      else calendarDate = new Date(calendarDate.getFullYear() - 1, 0, 1);
+      renderPlanner();
+    };
+    $('calendarNextBtn').onclick = () => {
+      if (calendarView === 'day') calendarDate.setDate(calendarDate.getDate() + 1);
+      else if (calendarView === 'week') calendarDate.setDate(calendarDate.getDate() + 7);
+      else if (calendarView === 'month') calendarDate = new Date(calendarDate.getFullYear(), calendarDate.getMonth() + 1, 1);
+      else calendarDate = new Date(calendarDate.getFullYear() + 1, 0, 1);
+      renderPlanner();
+    };
+    $('calendarContent').onclick = (e) => {
+      const mb = e.target.closest('[data-cal-month]'), db = e.target.closest('[data-cal-date]');
+      if (mb) { calendarDate = new Date(calendarDate.getFullYear(), Number(mb.dataset.calMonth), 1); calendarView = 'month'; renderPlanner(); }
+      else if (db) { calendarDate = new Date(db.dataset.calDate + 'T00:00'); calendarView = 'day'; renderPlanner(); }
+    };
+    $('clearAllBtn').onclick = () => openConfirm({
+      title: 'Clear entire plan?', message: 'This will remove all loaded applications and tasks. This cannot be undone.', confirmText: 'Clear Plan',
+      onConfirm: () => { uploadedApps = []; collapsedStates = {}; selectedAppId = 'ALL'; [KEYS.APPS, KEYS.STATES, KEYS.SELECTED].forEach(k => localStorage.removeItem(k)); renderSidebar(); renderPlanner(); }
+    });
+    $('searchInput').oninput = renderPlanner;
+    $('appSearchInput').oninput = renderSidebar;
+    document.addEventListener('keydown', (e) => { if (e.key === 'Escape') ['uploadModal', 'editModal', 'confirmActionModal', 'columnContextMenu'].forEach(id => $(id).classList.add('hidden')); });
+
+    applyTheme();
     renderSidebar();
     renderPlanner();
   </script>
