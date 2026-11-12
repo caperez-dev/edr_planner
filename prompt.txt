@@ -1,223 +1,57 @@
-Build a complete, self-contained single-file web application named `edrplanner.html` for an **EDR MOP & Application Planner**.
+Build a complete single-file web application named edrplanner.html for an EDR MOP and Application Planner.
 
-### STRICT OUTPUT & LINE-COUNT RULES
-1. **Single-Shot Complete File**: Output the entire working `edrplanner.html` in ONE single code block from `<!DOCTYPE html>` to `</html>`. Do NOT use placeholders, `// TODO`, or truncated sections.
-2. **Line Count Target (600–650 lines, strictly under 700 lines)**: Keep the code compact and clean (between 600 and 650 lines total) by:
-   - Using concise DOM/storage helpers (`const $ = (id) => document.getElementById(id)`, `save`, `load`, `cleanDesc`, `emptyCells`, `shiftCalendar`).
-   - Placing compact HTML elements and template literals on single lines where readable.
-   - Sharing a single unified modal (`#editModal`) for Cell Editing, App Metadata Editing, Settings, and Timeline Date Range.
-3. **Natural Color Styling (No Hex Codes)**: Use Tailwind CSS utility classes and natural CSS color rules (slate, indigo, violet, amber, emerald, rose/red, white, and translucent dark-mode variants) without hardcoding raw hex strings where standard Tailwind/CSS color tokens apply.
+General Requirements:
+1. Provide the complete working HTML file in one block from start to finish.
+2. Keep the code compact, clean, and around 600 to 700 lines of code.
+3. Use Tailwind CSS with dark mode support. Use standard color schemes such as slate, indigo, emerald, amber, and rose without hardcoded hex codes.
 
----
+Libraries and Fonts:
+- Inter font from Google Fonts.
+- Tailwind CSS via CDN.
+- SheetJS library via CDN for Excel spreadsheet export.
+- Lucide Icons via CDN for icons.
 
-### 1. TECH STACK & CDN LIBRARIES
-Include in `<head>`:
-- Google Fonts: `Inter` (weights 400, 500, 600, 700).
-- Tailwind CSS CDN (`https://cdn.tailwindcss.com`) configured with `darkMode: 'class'` and `fontFamily: { sans: ['Inter', 'sans-serif'] }`.
-- SheetJS (`https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js`) for `.xlsx` export.
-- Lucide Icons (`https://unpkg.com/lucide@latest`).
+Layout and Appearance:
+- Header: Sticky top bar with the title EDR MOP & Application Planner, Night Mode toggle button, Expand All and Collapse All buttons, global search input, and a Clear Plan button.
+- Sidebar: Left sidebar titled Applications & MOPs with an application counter, an Add App button, a search filter input, an All Applications view item, and an application list. Each application displays its name, optional description snippet, and hover buttons to edit attributes or delete.
+- Top Banner: Always visible banner containing a standalone Settings button on the left, and an Active View card on the right displaying the current application name, description, last updated time, Import JSON button, Export JSON button, Export XLSX button, Timeline toggle button, and Table or Calendar view tabs.
+- Main Workspace: Side-by-side view featuring a primary data table occupying 75 percent width and an aligned hourly Gantt timeline occupying 25 percent width.
+- Empty State: When no plan is loaded, display a clean empty state card with guidance on how to add or import a plan.
 
----
+Data and Storage:
+- Persist all state in browser local storage so user data, custom dropdowns, column visibility, frozen columns, collapsed sections, and theme settings remain saved across page refreshes.
+- Predefine standard failover and failback structure:
+  - Failover phase with Pre Failover, Failover, Failover Testing DR, and Post Failover subphases.
+  - Failback phase with Pre Failback, Failback, Failback Testing PROD, and Post Failback subphases.
+- Predefine standard teams and team members for assignees:
+  - Infrastructure & Cloud Ops
+  - Database Reliability DBA
+  - Quality Assurance QA
+  - Security & Compliance
 
-### 2. VISUAL DESIGN & CUSTOM CSS (`<style>`)
-- **Overall Theme**: Clean enterprise slate-and-indigo interface. Light mode uses a soft slate-tinted page background with crisp white panels and subtle slate borders; Night mode (`.dark` on `<html>`) uses a deep slate-black page background with dark slate panels and muted slate borders.
-- **Scrollbars**: Thin 6px width/height scrollbars with transparent tracks and rounded muted-slate thumbs (darker slate in night mode).
-- **Sticky / Frozen Table Columns**:
-  - `table { border-collapse: separate; border-spacing: 0; }`
-  - `th[data-col], td[data-col] { position: relative; }`
-  - `.is-frozen` on `th[data-col]` and `td[data-col]` sets `position: sticky !important; left: var(--freeze-left, 0px) !important; z-index: 10; background-color: inherit;` with a subtle right-side drop shadow. Frozen header cells use `z-index: 30` and match the light/dark slate header background.
-  - `.freeze-btn` is positioned on the right side of each `th[data-col]`, hidden (`opacity: 0`) by default, and becomes visible (`opacity: 1`) when hovering the header cell or when the column has `.is-frozen`.
-- **Calendar Badges & Event Cards**:
-  - `.cal-badge`: circular inline-flex badge (`min-width: 1.4rem; height: 1.4rem; border-radius: 9999px; font-weight: 700`).
-  - Color classes for the 4 event kinds (with matching soft translucent dark-mode variants):
-    - `cal-start` (Planned Start): soft violet background, medium violet border, deep violet text.
-    - `cal-end` (Planned End): warm amber/orange background, amber border, dark amber text.
-    - `cal-actualStart` (Actual Start): soft emerald background, emerald border, deep emerald text.
-    - `cal-actualEnd` (Actual End): soft rose/red background, red border, deep red text.
+Table Columns and Features:
+- Include 15 table columns: Index, App Name, Task, Dependency, Type, Duration, Planned Start, Planned End, Actual Start, Actual End, Owner, Backup, Checker, Comments, and Issues.
+- Support right-click on the table header to open a context menu for toggling column visibility and restoring default columns.
+- Support locking columns so they freeze in place during horizontal scrolling.
+- Phase and subphase header rows must display without dashes in empty cells. Only task rows show dashes for empty fields.
+- App Name column must be bold. Owner, Backup, and Checker must use matching clean plain text formatting.
 
----
+Side-by-Side Timeline:
+- The timeline must synchronize vertical scrolling with the main table.
+- Display a two-row sticky header with the current day, a Date Range filter button, and 24 hourly columns formatted compactly such as 12 AM, 1 AM, up to 11 PM.
+- Display smooth, slightly rounded duration bars for scheduled tasks with tooltip details. Clicking timeline bars should not open any edit modal.
 
-### 3. PAGE LAYOUT & DOM STRUCTURE
+Calendar View:
+- Provide an alternate Calendar view with Day, Week, Month, and Year modes.
+- Include a calendar toolbar with Today, Previous, Next navigation, and filter buttons for Planned Start, Planned End, Actual Start, and Actual End milestones.
 
-#### A. Sticky Top Header (`h-14`)
-- Full-width flex bar (`px-6 h-14`) with sticky top positioning:
-  - **Left**: App title `"EDR MOP & Application Planner"` in bold with a small monospace indigo label `"v1.0.0"`.
-  - **Right Controls**:
-    1. **Theme Toggle Button (`#themeToggleBtn`)**: Shows a moon/sun icon (`#themeIcon`) and `"Night Mode"` / `"Light Mode"` text (`#themeText`).
-    2. **Expand / Collapse Group**: Bordered pill container with `"Expand All"` (`#expandAllBtn`, `chevrons-down` icon), a `|` divider, and `"Collapse All"` (`#collapseAllBtn`, `chevrons-up` icon).
-    3. **Global Search (`#searchInput`)**: `w-60` input with a left search icon and placeholder `"Search tasks, owners, issues..."`.
-    4. **Clear Plan Button (`#clearAllBtn`)**: Trash icon + `"Clear Plan"`, turning red on hover.
-
-#### B. Left Sidebar (`Applications & MOPs`, `md:w-64`)
-- **Sidebar Header**:
-  - Left: Uppercase tracking label `"Applications & MOPs"` and subtext `"0 Loaded"` (`#appCountText`).
-  - Right: Solid indigo button **`"Add App"`** (`#openUploadModalBtn`) with **text only** (no `+` icon).
-- **Sidebar Search**: Filter input (`#appSearchInput`, `"Filter applications..."`) with a search icon.
-- **Application List (`#appList`)**:
-  - Empty state: Centered `file-code` icon and `"No apps uploaded yet."`
-  - When apps exist:
-    1. **`All Applications` Row**: Clicking selects `'ALL'`. Shows a `layers` icon, `"All Applications"`, and on the right a **plain monospace number** (`uploadedApps.length`) with **no badge/pill wrapper**. Styled with solid indigo background and white text when `'ALL'` is active.
-    2. **Individual App Rows**: Clicking selects that `app.id`.
-       - Shows a `box` icon and `app.name` (**do NOT display any version number** in the sidebar).
-       - Below `app.name`, render the app description in small muted truncated text **only if** `cleanDesc(app.description)` is non-empty (ignore empty strings or placeholders `'No description provided'`, `'No description'`, `'EDR MOP execution plan.'`).
-       - On hover (`group-hover:opacity-100`), reveal two icon buttons on the right:
-         - **Pencil icon** (`editAppMeta(app.id, event)`) to edit the app's name and description.
-         - **Trash icon** (`removeApp(app.id, event)`) to delete the app after confirmation.
-
-#### C. Main Content Area (`flex-1 min-w-0 p-4 md:p-6`)
-1. **Top Banner Row (`#topBannerRow`)**:
-   - Always visible (`flex items-stretch gap-3 flex-wrap`), even when 0 applications are loaded.
-   - **Separate Left Wrapper (`#openSettingsBtn`)**: The **entire card wrapper itself is a `<button>`** (`bg-white dark:bg-slate-900 border rounded-xl px-3.5 py-2.5 shadow-sm`) containing a gear icon (`settings`) and `"Settings"` text so clicking anywhere on the card immediately opens the Settings modal.
-   - **Separate Right Wrapper (`#activeViewBanner`)**: Flex-1 card containing:
-     - **Left Info**: `"Active View:"` label + plain bold indigo text (`#currentViewLabel`, e.g., `"All Applications"` or the selected app name — **no pill/box wrapper** around the app name and **no version number**) + `#activeAppMeta`:
-       - When `selectedAppId === 'ALL'`: `#activeAppMeta` must be **completely empty** (no description and no `"Last Updated"`).
-       - When a specific app is selected: if `cleanDesc(app.description)` is non-empty, show the truncated description followed by a `|` separator, and always show `"Last Updated: <app.lastUpdated || '-'>"`.
-     - **Right Actions**:
-       - Hint text (`#editHint`): `"Double-click or right-click any task cell to edit"` (hidden on smaller screens and hidden in Calendar view).
-       - **`"Import JSON"`** (`#importDataBtn`)
-       - **`"Export JSON"`** (`#exportDataBtn`)
-       - **`"Export XLSX"`** (`#exportJsonBtn`)
-       - **`"Timeline"`** toggle button (`#toggleTimelineBtn`)
-       - **`"Table"` / `"Calendar"`** segmented tab buttons (`[data-planner-view="table"]`, `[data-planner-view="calendar"]`).
-
-2. **Calendar Toolbar (`#calendarToolbar`)**:
-   - Shown only when `plannerView === 'calendar'`.
-   - Left: `"Today"` button (`#calendarTodayBtn`), Prev/Next chevron buttons (`#calendarPrevBtn`, `#calendarNextBtn`), and bold period label (`#calendarPeriodLabel`).
-   - Right:
-     - 4 color-coded kind filter buttons (`[data-calendar-kind]` for `start`, `end`, `actualStart`, `actualEnd`, with `end` active by default; clicking one activates that kind and dims the others with `opacity-40`).
-     - View mode switcher (`[data-calendar-view]` for `day`, `week`, `month`, `year`).
-
-3. **Empty State (`#emptyState`)**:
-   - Shown when no apps/tasks are loaded. Centered `calendar-range` icon, `"No MOP Schedule Loaded"`, and instructions mentioning `"Add App"` on the left panel for a single MOP or `"Import JSON"` above for an entire plan.
-
-4. **Side-by-Side Table (75%) & Timeline (25%) Workspace (`#tableWorkspace`)**:
-   - Flex container (`gap-3 items-start`).
-   - **Left: Main Table (`#tableContainer`)**:
-     - Width is `w-3/4` (75%) when Timeline is visible, or `w-full` (100%) when Timeline is hidden.
-     - Scroll container (`#tableScroll`, `overflow-x-scroll overflow-y-auto max-h-[75vh]`).
-     - Sticky `<thead id="tableHeader">` with `<tr id="headerRow" class="h-14">` and `<tbody id="tableBody" class="text-xs">`.
-   - **Right: Timeline (`#timelineContainer`)**:
-     - Width is `w-1/4 shrink-0` (25%) when visible.
-     - Scroll container (`#timelineScroll`, `overflow-x-scroll overflow-y-auto max-h-[75vh]`) with `<table id="timelineTable" class="w-max min-w-full text-left">`.
-     - **Synchronized Vertical Scrolling**: Scrolling `#tableScroll` vertically syncs `#timelineScroll.scrollTop` and vice versa (guarded by a `syncingScroll` boolean flag).
-
----
-
-### 4. DATA STRUCTURES & LOCALSTORAGE PERSISTENCE
-Persist all state in `localStorage` under these exact keys:
-- `edr_planner_uploaded_apps`: array of app objects `{ id, name, description, lastUpdated, tasks: [...] }`
-- `edr_planner_collapsed_states`: object mapping phase/subPhase IDs to boolean
-- `edr_planner_column_visibility`: object mapping column IDs to boolean
-- `edr_planner_selected_app_id`: `'ALL'` or specific `app.id`
-- `edr_planner_frozen_columns`: array of frozen column IDs
-- `edr_planner_theme`: `'dark'` or `'light'`
-- `edr_planner_dependency_options`: defaults to `['-', 'None', 'Network Ready', 'DB Replica Synced', 'DNS Cutover', 'Sanity Check']`
-- `edr_planner_type_options`: defaults to `['Task', 'Milestone', 'Test']`
-- `edr_planner_timeline_range`: `{ start: '', end: '' }`
-
-**Predefined Hierarchy (`STRUCTURE`)**:
-- `Failover`: `["Pre Failover", "Failover", "Failover Testing(DR)", "Post Failover"]`
-- `Failback`: `["Pre Failback", "Failback", "Failback Testing(PROD)", "Post Failback"]`
-
-**Predefined Teams (`TEAMS_DATA`)**:
-- `"Infrastructure & Cloud Ops"`: `["Alex Rivera", "David Chen", "Sarah Jenkins"]`
-- `"Database Reliability (DBA)"`: `["Michael Scott", "Pam Beesly", "Jim Halpert"]`
-- `"Quality Assurance (QA)"`: `["Dwight Schrute", "Angela Martin", "Oscar Martinez"]`
-- `"Security & Compliance"`: `["Ryan Howard", "Kelly Kapoor"]`
-
----
-
-### 5. TABLE COLUMNS, HIERARCHY ROWS & CELL FORMATTING
-**15 Columns (`COLUMNS`)**:
-1. `index` (`#`, `w-12 text-center`)
-2. `appName` (`App Name`, `min-w-[140px]`) — automatically hidden when viewing a single app (`selectedAppId !== 'ALL'`), shown when viewing `'ALL'`.
-3. `task` (`Task`, `min-w-[260px]`)
-4. `dependency` (`Dependency`, `min-w-[160px]`) — hidden by default in `DEFAULT_COLS`.
-5. `type` (`Type`, `min-w-[100px]`)
-6. `duration` (`Duration`, `min-w-[100px]`)
-7. `start` (`PLANNED START`, `min-w-[150px]`)
-8. `end` (`PLANNED END`, `min-w-[150px]`)
-9. `actualStart` (`Actual Start`, `min-w-[150px]`) — hidden by default in `DEFAULT_COLS`.
-10. `actualEnd` (`Actual End`, `min-w-[150px]`) — hidden by default in `DEFAULT_COLS`.
-11. `owner` (`Owner`, `min-w-[120px]`)
-12. `backup` (`Backup`, `min-w-[120px]`)
-13. `checker` (`Checker`, `min-w-[120px]`)
-14. `comments` (`Comments`, `min-w-[180px]`)
-15. `issues` (`Issues`, `min-w-[180px]`)
-
-**Row Rendering Rules (`renderPlanner`)**:
-- Every row (`Phase`, `Sub Phase`, and `Task`) must have `h-9` (36px height) so it aligns 1:1 with the side-by-side Timeline rows.
-- **Phase Rows (`Failover`, `Failback`)**: Dark slate background with white bold text, row index number, blank `appName`, collapsible chevron + Phase name in `task`, blank `dependency`, `"Phase"` in `type`, and **completely empty cells (NO `-` dashes)** for all remaining columns (`duration` through `issues`).
-- **Sub-Phase Rows**: Tinted indigo/slate background with bold text, row index number, blank `appName`, indented collapsible chevron + Sub-Phase name + `(X tasks)` pill in `task`, blank `dependency`, `"Sub Phase"` in `type`, and **completely empty cells (NO `-` dashes)** for all remaining columns.
-- **Task Rows (`.task-row`)**:
-  - `appName` cell (`td[data-col="appName"]`) must be **bold** (`font-bold`).
-  - `owner`, `backup`, and `checker` cells must all use the **exact same minimal plain-text formatting** (no pill or badge wrapper on `owner`).
-  - `type` cell renders a subtle bordered slate pill.
-  - `duration` renders `${parseInt(item.duration, 10) || 0} mins`.
-  - Unset task values default to `'-'`.
-
-**Header Context Menu & Column Freezing**:
-- Right-clicking `#tableHeader` opens `#columnContextMenu` at the cursor with checkboxes to toggle visibility of any column and a `"Restore Default State"` button (`#restoreColumnsBtn`) that resets `columnVisibility` to `DEFAULT_COLS` and clears `frozenColumns`.
-- Clicking the lock button (`.freeze-btn`) on any header cell toggles that column in `frozenColumns` and recalculates sticky left offsets (`--freeze-left`) across all visible frozen columns.
-
----
-
-### 6. SIDE-BY-SIDE TIMELINE ENGINE (`renderTimeline`)
-- **Date Range Calculation**:
-  - Extract valid timestamps from all tasks' `start` and `end`.
-  - Use `timelineRange.start` and `timelineRange.end` if set by the user; otherwise fall back to auto min/max task dates (capped at 31 days max).
-- **Two-Row Sticky Header (`<thead class="sticky top-0 z-20">`)**:
-  - **Row 1 (Day Header, `h-7`)**: One `<th colspan="24">` per day. Inside each day header, place a horizontally sticky inner container (`<div class="sticky left-1.5 inline-flex items-center gap-2">`) containing the date string (e.g. `Thu, Nov 6, 2026`) and a **`"Date Range"`** button (`onclick="openTimelineRangeModal(event)"`). This ensures the date and button stay visible as the user scrolls horizontally.
-  - **Row 2 (Hour Header, `h-7`)**: 24 narrow columns per day (`w-8 min-w-[32px] max-w-[32px] px-0 text-center font-mono text-[9px] tracking-tighter`) formatted compactly as `12 AM`, `1 AM`, ..., `12 PM`.
-- **Body Rows (`h-9`)**:
-  - Phase and Sub-Phase rows render empty `h-9` full-colspan cells matching the main table's background colors (no text labels). Clicking them toggles collapse.
-  - Task rows render 32px hourly vertical grid lines in the background and an absolutely positioned task bar (`left: ${leftPct}%; width: ${widthPct}%`) with an indigo-to-violet gradient, **slightly curved edges (`rounded-sm`)**, no text label inside the bar, and a native `title` tooltip with app name, task name, planned start/end, and duration.
-  - Clicking or double-clicking timeline bars must **not** open any modal.
-- On initial render, auto-scroll `#timelineScroll.scrollLeft` to 1 hour before the earliest task timestamp.
-
----
-
-### 7. SEPARATED UPLOAD ("ADD APP") VS. "IMPORT JSON" & EXPORTS
-- **`openFileModal(mode)`**:
-  - `'single'` (triggered by sidebar **`"Add App"`** button): Sets modal title to `"Add Single Application MOP"`, disables multi-file selection (`multiple = false`), and accepts a single app JSON/JS file. If the parsed file contains a multi-app array (`parsed.apps` or array of app objects with `.tasks`), show an `alert('This file contains multiple applications. Please use "Import JSON" instead.')` and abort.
-  - `'multi'` (triggered by top banner **`"Import JSON"`** button): Sets modal title to `"Import Multi-App Planner JSON"`, enables `multiple = true`, and imports multi-app exported files (`parsed.apps`, plus restoring `parsed.depOptions` and `parsed.typeOptions` if present) or multiple single-app files.
-  - Support both raw `.json` and `.js` files (strip leading `window.xyz =`, `const xyz =`, `export default`, and trailing semicolons before `JSON.parse`).
-- **`Export JSON` (`#exportDataBtn`)**:
-  - Opens confirmation modal (`"Export portable table file?"`) and downloads `edr-planner-table.json` containing `{ apps: uploadedApps, depOptions, typeOptions, exportedAt: nowStamp() }`.
-- **`Export XLSX` (`#exportJsonBtn`)**:
-  - Opens confirmation modal (`"Export workbook?"`) and uses `XLSX.utils.json_to_sheet` to generate a multi-sheet `.xlsx` file (`edr-planner-${exportName}.xlsx`), one sheet per application in the active view.
-
----
-
-### 8. UNIFIED EDIT MODAL, SETTINGS MODAL & AUTO-TIMESTAMPING
-All edits update `app.lastUpdated = nowStamp()` (formatted as `"6 Nov 2026 12:30 PM"`), save to `localStorage`, and re-render.
-1. **Settings Modal (`#openSettingsBtn`)**:
-   - Modal title: **`"Settings"`**.
-   - Displays **Dependencies** (`depOptions`) and **Task Types** (`typeOptions`) as flex-wrapped chips.
-   - **Hover-to-Delete**: Each chip has `group` class and a `&times;` button (`opacity-0 group-hover:opacity-100 hover:text-red-500`) that calls `removeDropdownOption(kind, index)` to delete that option immediately.
-   - **Add Option Form**: Below each chip list, render a text input (`newDepInput` / `newTypeInput`) and an `"Add"` button (`addDropdownOption('dep' | 'type')`) to append new options safely.
-2. **App Attributes Modal (`editAppMeta(appId, event)`)**:
-   - Triggered by the hover pencil icon on any sidebar app.
-   - Edits `App Name` (`#edAppName`), `Description` (`#edAppDesc`), and displays read-only `Last Updated (Auto)`.
-3. **Timeline Date Range Modal (`openTimelineRangeModal(event)`)**:
-   - Edits `Start Date` (`<input type="date">`), `End Date` (`<input type="date">`), and includes a `"Reset to Auto (Task Dates)"` button (`resetTimelineRange()`).
-4. **Cell Edit Modal (`triggerCellEdit(td, appId, taskId)`)**:
-   - Triggered by `ondblclick`, `oncontextmenu` (right-click), or `Enter`/`Space` keydown on any `.task-row` cell (except `index` and `appName`):
-     - `task`: Text input for Description + textarea for Details.
-     - `dependency` & `type`: `<select>` dropdown populated from `depOptions` or `typeOptions`.
-     - `duration`: `<input type="number" min="0">`.
-     - `owner`, `backup`, `checker`: Searchable team member selector (`#ownerSearch` + `#ownerList` grouped by `TEAMS_DATA` team names, highlighting the selected member with a `✓`).
-     - `start`, `end`, `actualStart`, `actualEnd`: `<input type="datetime-local">` converted back to friendly `"D Mon YYYY H:MM AM/PM"` format on save.
-     - `comments`, `issues`: 4-row `<textarea>`.
-5. **Confirm Action Modal (`#confirmActionModal`)**:
-   - Clean text-only layout (title, message, Cancel button, red Confirm button — **no SVG icon wrapper**). Used for Delete App, Clear Plan, Export JSON, and Export XLSX.
-
----
-
-### 9. CALENDAR VIEW ENGINE (`renderCalendar`)
-- Filters tasks by active date kind (`start`, `end`, `actualStart`, `actualEnd`) and search query.
-- **4 Views**:
-  - `day`: 24 hourly rows (`4.5rem 1fr` grid) for the selected day.
-  - `week`: 7-column Mon–Sun header + 24 hourly rows.
-  - `month`: Mon–Sun header + 42-day grid (`min-h-[6.5rem]` cells), showing a `.cal-badge` on dates with events, up to 3 truncated event cards (`<strong>AppName</strong>: Task`), and `+N more` overflow text.
-  - `year`: 12 mini-month cards in a responsive 2/4-column grid; clicking a month name drills down to `month` view, and clicking a day number drills down to `day` view.
+Modals and Interactions:
+- Add App Modal: Allows uploading a single application JSON or JS file.
+- Import JSON: Accepts multi-application exported JSON plans or multiple single files.
+- Export JSON: Downloads a complete portable JSON file containing all applications, tasks, and settings so it can be transferred and imported onto another computer.
+- Export XLSX: Generates a multi-sheet Excel file with one sheet per application.
+- Cell Edit Modal: Triggered by double-clicking or right-clicking any task cell. Opens an editor appropriate for the field, including searchable team member selection for assignees, date-time pickers, dropdown selectors, duration numbers, and text areas. Automatically updates the last updated timestamp on save.
+- Settings Modal: Allows viewing, adding, and deleting custom options for Dependencies and Task Types using removable chips.
+- App Attributes Modal: Allows editing application name and description.
+- Timeline Date Range Modal: Allows selecting custom start and end dates with a reset option.
+- Action Confirmation Modal: Clean text-only dialog confirming destructive actions or exports.
