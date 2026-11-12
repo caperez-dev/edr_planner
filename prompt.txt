@@ -1,57 +1,22 @@
-Build a complete single-file web application named edrplanner.html for an EDR MOP and Application Planner.
+Write a complete, single-file HTML application named edrplanner.html for an EDR MOP and Application Planner.
 
-General Requirements:
-1. Provide the complete working HTML file in one block from start to finish.
-2. Keep the code compact, clean, and around 600 to 700 lines of code.
-3. Use Tailwind CSS with dark mode support. Use standard color schemes such as slate, indigo, emerald, amber, and rose without hardcoded hex codes.
+Output the entire working application in one single code block without any placeholders, omissions, or multi-part splits. Keep the total file size compact and under 400 lines by writing dense, idiomatic JavaScript and Tailwind utility classes.
 
-Libraries and Fonts:
-- Inter font from Google Fonts.
-- Tailwind CSS via CDN.
-- SheetJS library via CDN for Excel spreadsheet export.
-- Lucide Icons via CDN for icons.
+Technical Stack:
+- Google Fonts Inter, Tailwind CSS via CDN with dark mode enabled.
+- SheetJS via cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js for Excel exports.
+- Lucide Icons via unpkg.com/lucide@latest for icons.
 
-Layout and Appearance:
-- Header: Sticky top bar with the title EDR MOP & Application Planner, Night Mode toggle button, Expand All and Collapse All buttons, global search input, and a Clear Plan button.
-- Sidebar: Left sidebar titled Applications & MOPs with an application counter, an Add App button, a search filter input, an All Applications view item, and an application list. Each application displays its name, optional description snippet, and hover buttons to edit attributes or delete.
-- Top Banner: Always visible banner containing a standalone Settings button on the left, and an Active View card on the right displaying the current application name, description, last updated time, Import JSON button, Export JSON button, Export XLSX button, Timeline toggle button, and Table or Calendar view tabs.
-- Main Workspace: Side-by-side view featuring a primary data table occupying 75 percent width and an aligned hourly Gantt timeline occupying 25 percent width.
-- Empty State: When no plan is loaded, display a clean empty state card with guidance on how to add or import a plan.
+Layout and UI:
+- Top Header: Title EDR MOP & Application Planner, night mode toggle, search bar, expand and collapse buttons, and clear plan button.
+- Left Sidebar: Application list with Add App button, search filter, All Applications selector, and app cards with edit and delete buttons.
+- Top Banner: Settings button, active application name and last updated label, Import JSON, Export JSON, Export XLSX, Timeline toggle, and Table and Calendar view switcher buttons.
+- Dual Workspace: Side-by-side view featuring a 75 percent width table aligned row-for-row with a 25 percent width hourly Gantt timeline with synchronized vertical scrolling.
+- Calendar View: Alternate view displaying scheduled tasks on a monthly and weekly grid with milestone filters.
+- Reusable Modal: One single dynamic modal dialog reused for cell editing, application attributes, custom settings chips, and confirmation dialogs.
 
-Data and Storage:
-- Persist all state in browser local storage so user data, custom dropdowns, column visibility, frozen columns, collapsed sections, and theme settings remain saved across page refreshes.
-- Predefine standard failover and failback structure:
-  - Failover phase with Pre Failover, Failover, Failover Testing DR, and Post Failover subphases.
-  - Failback phase with Pre Failback, Failback, Failback Testing PROD, and Post Failback subphases.
-- Predefine standard teams and team members for assignees:
-  - Infrastructure & Cloud Ops
-  - Database Reliability DBA
-  - Quality Assurance QA
-  - Security & Compliance
-
-Table Columns and Features:
-- Include 15 table columns: Index, App Name, Task, Dependency, Type, Duration, Planned Start, Planned End, Actual Start, Actual End, Owner, Backup, Checker, Comments, and Issues.
-- Support right-click on the table header to open a context menu for toggling column visibility and restoring default columns.
-- Support locking columns so they freeze in place during horizontal scrolling.
-- Phase and subphase header rows must display without dashes in empty cells. Only task rows show dashes for empty fields.
-- App Name column must be bold. Owner, Backup, and Checker must use matching clean plain text formatting.
-
-Side-by-Side Timeline:
-- The timeline must synchronize vertical scrolling with the main table.
-- Display a two-row sticky header with the current day, a Date Range filter button, and 24 hourly columns formatted compactly such as 12 AM, 1 AM, up to 11 PM.
-- Display smooth, slightly rounded duration bars for scheduled tasks with tooltip details. Clicking timeline bars should not open any edit modal.
-
-Calendar View:
-- Provide an alternate Calendar view with Day, Week, Month, and Year modes.
-- Include a calendar toolbar with Today, Previous, Next navigation, and filter buttons for Planned Start, Planned End, Actual Start, and Actual End milestones.
-
-Modals and Interactions:
-- Add App Modal: Allows uploading a single application JSON or JS file.
-- Import JSON: Accepts multi-application exported JSON plans or multiple single files.
-- Export JSON: Downloads a complete portable JSON file containing all applications, tasks, and settings so it can be transferred and imported onto another computer.
-- Export XLSX: Generates a multi-sheet Excel file with one sheet per application.
-- Cell Edit Modal: Triggered by double-clicking or right-clicking any task cell. Opens an editor appropriate for the field, including searchable team member selection for assignees, date-time pickers, dropdown selectors, duration numbers, and text areas. Automatically updates the last updated timestamp on save.
-- Settings Modal: Allows viewing, adding, and deleting custom options for Dependencies and Task Types using removable chips.
-- App Attributes Modal: Allows editing application name and description.
-- Timeline Date Range Modal: Allows selecting custom start and end dates with a reset option.
-- Action Confirmation Modal: Clean text-only dialog confirming destructive actions or exports.
+Data and Features:
+- Hierarchy: Predefined Failover and Failback phases with standard subphases like Pre Failover, Failover, Testing, and Post Failover.
+- Table Columns: Index, App Name, Task, Dependency, Type, Duration, Planned Start, Planned End, Actual Start, Actual End, Owner, Backup, Checker, Comments, and Issues.
+- Interactions: Double-click or right-click any task cell to open the editor with searchable team assignees, date pickers, and dropdowns. Right-click header to toggle column visibility. Lock button to freeze columns.
+- Storage and Export: Automatically persist all state, apps, custom dropdowns, and theme in browser local storage. Support uploading single MOP files, importing multi-app JSON bundles, exporting portable JSON files, and exporting multi-sheet Excel files.
