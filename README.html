@@ -1,0 +1,156 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>EDR MOP & Application Planner — Documentation</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>tailwind.config = { darkMode: 'class', theme: { extend: { fontFamily: { sans: ['Inter', 'sans-serif'] } } } };</script>
+  <script src="https://unpkg.com/lucide@latest"></script>
+</head>
+<body class="bg-slate-50 dark:bg-slate-950 text-slate-800 dark:text-slate-100 font-sans antialiased min-h-screen py-10 px-4 sm:px-6 lg:px-8">
+  <div class="max-w-4xl mx-auto space-y-8">
+    
+    <!-- Header Card -->
+    <header class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-6 sm:p-8 shadow-sm flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+      <div>
+        <div class="inline-flex items-center gap-2 px-2.5 py-1 rounded-full bg-indigo-50 dark:bg-indigo-950/70 border border-indigo-200 dark:border-indigo-800 text-indigo-700 dark:text-indigo-300 text-xs font-semibold mb-3">
+          <i data-lucide="book-open" class="w-3.5 h-3.5"></i>
+          <span>User & Developer Guide</span>
+        </div>
+        <h1 class="text-2xl sm:text-3xl font-bold tracking-tight text-slate-900 dark:text-white">EDR MOP & Application Planner</h1>
+        <p class="text-sm text-slate-500 dark:text-slate-400 mt-1">Lightweight, zero-install, single-file planner for Enterprise Disaster Recovery (EDR) MOP execution.</p>
+      </div>
+      <div class="flex items-center gap-2">
+        <a href="edrplanner.html" class="inline-flex items-center gap-1.5 px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-semibold rounded-xl shadow-sm transition-colors">
+          <i data-lucide="play" class="w-3.5 h-3.5"></i>
+          <span>Launch Planner</span>
+        </a>
+      </div>
+    </header>
+
+    <!-- Quick Start -->
+    <section class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-6 sm:p-8 shadow-sm space-y-4">
+      <div class="flex items-center gap-2 border-b border-slate-100 dark:border-slate-800 pb-3">
+        <i data-lucide="zap" class="w-5 h-5 text-indigo-600 dark:text-indigo-400"></i>
+        <h2 class="text-lg font-bold text-slate-900 dark:text-white">Quick Start / How to Use</h2>
+      </div>
+
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-4 text-xs leading-relaxed">
+        <div class="p-4 rounded-xl border border-slate-100 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-800/40 space-y-1.5">
+          <span class="font-bold text-indigo-600 dark:text-indigo-400">1. Open the App</span>
+          <p class="text-slate-600 dark:text-slate-300">Double-click <code class="px-1.5 py-0.5 rounded bg-slate-200 dark:bg-slate-700 font-mono">edrplanner.html</code> in any browser (Chrome, Edge, Firefox), or run a lightweight local server like <code class="px-1.5 py-0.5 rounded bg-slate-200 dark:bg-slate-700 font-mono">npx serve -l 8080</code>.</p>
+        </div>
+
+        <div class="p-4 rounded-xl border border-slate-100 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-800/40 space-y-1.5">
+          <span class="font-bold text-indigo-600 dark:text-indigo-400">2. Load Applications / MOPs</span>
+          <p class="text-slate-600 dark:text-slate-300">Click <strong>Add App</strong> on the left sidebar to upload an individual JSON/JS file, or click <strong>Import JSON</strong> on the top banner to load complete multi-application plans.</p>
+        </div>
+
+        <div class="p-4 rounded-xl border border-slate-100 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-800/40 space-y-1.5">
+          <span class="font-bold text-indigo-600 dark:text-indigo-400">3. Edit Tasks & Metadata</span>
+          <p class="text-slate-600 dark:text-slate-300"><strong>Double-click</strong> or <strong>right-click</strong> any task cell to update details, assignees (Owner/Backup/Checker), dates, comments, or issues. Hover over sidebar apps to edit metadata.</p>
+        </div>
+
+        <div class="p-4 rounded-xl border border-slate-100 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-800/40 space-y-1.5">
+          <span class="font-bold text-indigo-600 dark:text-indigo-400">4. Timeline, Calendar & Export</span>
+          <p class="text-slate-600 dark:text-slate-300">Toggle <strong>Timeline</strong> to inspect the side-by-side Gantt view, switch to <strong>Calendar</strong> for monthly/weekly schedules, and export via <strong>Export JSON</strong> or <strong>Export XLSX</strong>.</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- Tech Stack Table -->
+    <section class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-6 sm:p-8 shadow-sm space-y-4">
+      <div class="flex items-center gap-2 border-b border-slate-100 dark:border-slate-800 pb-3">
+        <i data-lucide="layers" class="w-5 h-5 text-indigo-600 dark:text-indigo-400"></i>
+        <h2 class="text-lg font-bold text-slate-900 dark:text-white">Tech Stack & Architecture Justification</h2>
+      </div>
+
+      <div class="overflow-x-auto">
+        <table class="w-full text-left text-xs border-collapse">
+          <thead>
+            <tr class="border-b border-slate-200 dark:border-slate-700 text-slate-400 uppercase text-[10px] tracking-wider">
+              <th class="py-2.5 px-3">Technology</th>
+              <th class="py-2.5 px-3">Role</th>
+              <th class="py-2.5 px-3">Why It Was Chosen</th>
+            </tr>
+          </thead>
+          <tbody class="divide-y divide-slate-100 dark:divide-slate-800">
+            <tr>
+              <td class="py-3 px-3 font-semibold text-slate-900 dark:text-white">Vanilla HTML5 & ES6+</td>
+              <td class="py-3 px-3 text-slate-500">Core UI & Logic</td>
+              <td class="py-3 px-3 text-slate-600 dark:text-slate-300">Runs directly in any browser with zero installation, build tools, bundlers, or package manager requirements. Instant handoff.</td>
+            </tr>
+            <tr>
+              <td class="py-3 px-3 font-semibold text-slate-900 dark:text-white">Tailwind CSS (CDN)</td>
+              <td class="py-3 px-3 text-slate-500">Design System</td>
+              <td class="py-3 px-3 text-slate-600 dark:text-slate-300">Enterprise styling with dark/light mode, clean responsive typography, and consistent spacing without CSS build pipelines.</td>
+            </tr>
+            <tr>
+              <td class="py-3 px-3 font-semibold text-slate-900 dark:text-white">SheetJS (xlsx)</td>
+              <td class="py-3 px-3 text-slate-500">Excel Export</td>
+              <td class="py-3 px-3 text-slate-600 dark:text-slate-300">Client-side <code class="font-mono">.xlsx</code> generation creating structured workbooks with a dedicated sheet for every application.</td>
+            </tr>
+            <tr>
+              <td class="py-3 px-3 font-semibold text-slate-900 dark:text-white">Lucide Icons</td>
+              <td class="py-3 px-3 text-slate-500">Iconography</td>
+              <td class="py-3 px-3 text-slate-600 dark:text-slate-300">Clean, lightweight SVG icons rendered on-demand without external icon font files or CSS icon sprite bloat.</td>
+            </tr>
+            <tr>
+              <td class="py-3 px-3 font-semibold text-slate-900 dark:text-white">Browser localStorage</td>
+              <td class="py-3 px-3 text-slate-500">Persistence</td>
+              <td class="py-3 px-3 text-slate-600 dark:text-slate-300">Persists apps, custom dropdowns, freeze states, column visibility, and theme between page reloads with zero server database needed.</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- Key Features & Views -->
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+      
+      <!-- Features Card -->
+      <section class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-6 shadow-sm space-y-3">
+        <div class="flex items-center gap-2 border-b border-slate-100 dark:border-slate-800 pb-2.5">
+          <i data-lucide="check-circle-2" class="w-4 h-4 text-indigo-600 dark:text-indigo-400"></i>
+          <h3 class="text-sm font-bold text-slate-900 dark:text-white">Core Features</h3>
+        </div>
+        <ul class="space-y-2 text-xs text-slate-600 dark:text-slate-300 list-disc list-inside">
+          <li><strong>Side-by-Side Dual View:</strong> 75% interactive table aligned 1:1 with a 25% hourly Gantt timeline.</li>
+          <li><strong>EDR Hierarchy:</strong> Pre-structured Failover and Failback phases with sub-phases and collapse toggles.</li>
+          <li><strong>Unified Inline Cell Editor:</strong> Double-click / right-click edit modal with searchable team member pickers.</li>
+          <li><strong>Sticky Column Freezing:</strong> Pinned columns with calculated offsets and header context toggle menu.</li>
+          <li><strong>Multi-Day Timeline:</strong> Custom date ranges with sticky horizontal date headers and gradient duration bars.</li>
+        </ul>
+      </section>
+
+      <!-- Pages & Modals Included -->
+      <section class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-6 shadow-sm space-y-3">
+        <div class="flex items-center gap-2 border-b border-slate-100 dark:border-slate-800 pb-2.5">
+          <i data-lucide="layout-grid" class="w-4 h-4 text-indigo-600 dark:text-indigo-400"></i>
+          <h3 class="text-sm font-bold text-slate-900 dark:text-white">Views & Modals Included</h3>
+        </div>
+        <ul class="space-y-2 text-xs text-slate-600 dark:text-slate-300 list-disc list-inside">
+          <li><strong>Table Workspace:</strong> Primary planning grid with 15 data columns and side-by-side Gantt view.</li>
+          <li><strong>Calendar Container:</strong> Full scheduling engine supporting Year, Month, Week, and Day drill-downs.</li>
+          <li><strong>Upload / Import Modal:</strong> Handles single-app MOP JSON files as well as multi-app exported bundles.</li>
+          <li><strong>Settings Modal:</strong> Live management of custom Dependency and Task Type chips with hover-delete.</li>
+          <li><strong>App Metadata & Confirm Modals:</strong> App attribute editing and safety verification dialogs.</li>
+        </ul>
+      </section>
+
+    </div>
+
+    <!-- Footer -->
+    <footer class="text-center text-xs text-slate-400 py-4 border-t border-slate-200 dark:border-slate-800">
+      EDR MOP & Application Planner &bull; Portable Single-File Application
+    </footer>
+
+  </div>
+
+  <script>lucide.createIcons();</script>
+</body>
+</html>
