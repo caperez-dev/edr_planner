@@ -1,5 +1,9 @@
 <!DOCTYPE html>
 <html lang="en">
+<!-- ==========================================================================
+     SECTION 1: HEAD (Meta, External CDNs & CSS Styles)
+     Dependencies: Google Fonts (Inter), Tailwind CSS, SheetJS (XLSX), Lucide Icons
+     ========================================================================== -->
 <head>
   <meta charset="UTF-8" /><meta name="viewport" content="width=device-width, initial-scale=1.0" /><title>EDR MOP & Application Planner</title>
   <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -8,6 +12,7 @@
   <script>tailwind.config = { darkMode: 'class', theme: { extend: { fontFamily: { sans: ['Inter', 'sans-serif'] } } } };</script>
   <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script><script src="https://unpkg.com/lucide@latest"></script>
   <style>
+    /* Custom scrollbars and freeze-column sticky styles */
     ::-webkit-scrollbar { width: 6px; height: 6px; } ::-webkit-scrollbar-track { background: transparent; }
     ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; } .dark ::-webkit-scrollbar-thumb { background: #475569; }
     table { border-collapse: separate; border-spacing: 0; } th[data-col], td[data-col] { position: relative; }
@@ -15,6 +20,7 @@
     thead th[data-col].is-frozen { z-index: 30; background-color: #f1f5f9; } .dark thead th[data-col].is-frozen { background-color: #1e293b; }
     .freeze-btn { position: absolute; right: 4px; top: 50%; transform: translateY(-50%); opacity: 0; transition: opacity 0.15s; }
     th[data-col]:hover .freeze-btn, th[data-col].is-frozen .freeze-btn { opacity: 1; }
+    /* Calendar badge colors for Planned/Actual start & end */
     .cal-badge { display: inline-flex; align-items: center; justify-content: center; min-width: 1.4rem; height: 1.4rem; border-radius: 9999px; font-weight: 700; }
     .cal-start { background: #f5f3ff; border-color: #8b5cf6; color: #4c1d95; } .cal-end { background: #fff7ed; border-color: #f59e0b; color: #9a5b00; }
     .cal-actualStart { background: #ecfdf5; border-color: #10b981; color: #065f46; } .cal-actualEnd { background: #fef2f2; border-color: #ef4444; color: #991b1b; }
@@ -23,6 +29,10 @@
   </style>
 </head>
 <body class="bg-slate-50 dark:bg-slate-950 text-slate-800 dark:text-slate-100 font-sans antialiased min-h-screen flex flex-col">
+
+  <!-- ==========================================================================
+       SECTION 2: TOP HEADER (Branding, Night Mode, Collapse/Expand, Global Search)
+       ========================================================================== -->
   <header class="border-b border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 sticky top-0 z-30 shadow-sm">
     <div class="w-full px-6 h-14 flex items-center justify-between gap-4 flex-wrap">
       <h1 class="text-base font-bold tracking-tight text-slate-900 dark:text-white flex items-baseline gap-2"><span>EDR MOP & Application Planner</span><span class="text-[10px] font-mono font-medium text-indigo-500">v1.0.0</span></h1>
@@ -37,7 +47,12 @@
       </div>
     </div>
   </header>
+
+  <!-- ==========================================================================
+       SECTION 3: MAIN LAYOUT (Left Sidebar + Main Work Area)
+       ========================================================================== -->
   <div class="flex-1 flex w-full overflow-hidden flex-col md:flex-row">
+    <!-- 3A. Left Sidebar: Application List & Add App Button -->
     <aside class="w-full md:w-64 bg-white dark:bg-slate-900 border-b md:border-b-0 md:border-r border-slate-200 dark:border-slate-800 p-4 flex flex-col shrink-0">
       <div class="flex items-center justify-between mb-3 pb-2 border-b border-slate-100 dark:border-slate-800">
         <div><h2 class="text-[11px] font-bold text-slate-400 uppercase tracking-wider">Applications & MOPs</h2><p class="text-[11px] text-slate-500 mt-0.5" id="appCountText">0 Loaded</p></div>
@@ -46,7 +61,10 @@
       <div class="relative mb-3"><i data-lucide="search" class="w-3.5 h-3.5 absolute left-2.5 top-1/2 -translate-y-1/2 text-slate-400"></i><input id="appSearchInput" type="text" placeholder="Filter applications..." class="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg pl-8 pr-3 py-1.5 text-xs focus:outline-none focus:border-indigo-500" /></div>
       <div id="appList" class="flex-1 overflow-y-auto space-y-1"></div>
     </aside>
+
+    <!-- 3B. Main Work Area: Top Banner, Calendar Toolbar, Table/Timeline Workspace -->
     <main class="flex-1 min-w-0 p-4 md:p-6 overflow-y-auto flex flex-col gap-4">
+      <!-- Top Banner: Settings Button + Active View Details & Action Buttons -->
       <div id="topBannerRow" class="hidden items-stretch gap-3 flex-wrap">
         <button id="openSettingsBtn" type="button" class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 hover:border-indigo-400 dark:hover:border-indigo-500 px-3.5 py-2.5 rounded-xl shadow-sm inline-flex items-center gap-1.5 text-xs font-semibold text-slate-700 dark:text-slate-200 hover:text-indigo-600 dark:hover:text-indigo-400 cursor-pointer transition-colors"><i data-lucide="settings" class="w-4 h-4 text-indigo-600 dark:text-indigo-400"></i><span>Settings</span></button>
         <div id="activeViewBanner" class="flex-1 min-w-0 flex items-center justify-between bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 px-4 py-2.5 rounded-xl shadow-sm flex-wrap gap-3">
@@ -61,6 +79,8 @@
           </div>
         </div>
       </div>
+
+      <!-- Calendar Toolbar: Period navigation & milestone kind filters -->
       <div id="calendarToolbar" class="hidden items-center justify-between gap-3 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 px-3 py-2 flex-wrap">
         <div class="flex items-center gap-1.5">
           <button id="calendarTodayBtn" class="rounded-md border border-slate-300 dark:border-slate-700 px-2.5 py-1 text-xs font-semibold hover:border-indigo-400">Today</button>
@@ -78,19 +98,33 @@
           <div class="flex items-center rounded-md border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 p-0.5 text-xs"><button data-calendar-view="day" class="rounded px-2 py-1 font-semibold">Day</button><button data-calendar-view="week" class="rounded px-2 py-1 font-semibold">Week</button><button data-calendar-view="month" class="rounded px-2 py-1 font-semibold">Month</button><button data-calendar-view="year" class="rounded px-2 py-1 font-semibold">Year</button></div>
         </div>
       </div>
+
+      <!-- Empty State View: Shown when no apps are loaded -->
       <div id="emptyState" class="flex-1 flex flex-col items-center justify-center py-16 text-slate-400 border border-slate-200 dark:border-slate-800 rounded-xl bg-white dark:bg-slate-900 shadow-sm"><i data-lucide="calendar-range" class="w-10 h-10 mb-2 stroke-[1.5]"></i><p class="text-sm font-medium text-slate-600 dark:text-slate-300">No MOP Schedule Loaded</p><p class="text-xs text-slate-400 max-w-sm text-center mt-1">Click <strong>"Add App"</strong> on the left panel to upload a single MOP, or use <strong>"Import JSON"</strong> above to load an entire plan.</p></div>
+
+      <!-- Dual Workspace: 75% Table + 25% Gantt Timeline Side-by-Side -->
       <div id="tableWorkspace" class="hidden w-full gap-3 items-start">
         <div id="tableContainer" class="w-3/4 min-w-0 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl overflow-hidden shadow-sm flex flex-col"><div id="tableScroll" class="overflow-x-scroll overflow-y-auto max-h-[75vh]"><table class="w-full text-left"><thead id="tableHeader" class="bg-slate-100 dark:bg-slate-800 sticky top-0 z-20 text-[11px] font-bold text-slate-600 dark:text-slate-300 uppercase tracking-wider select-none"><tr id="headerRow" class="h-14"></tr></thead><tbody id="tableBody" class="text-xs"></tbody></table></div></div>
         <div id="timelineContainer" class="hidden w-1/4 shrink-0 min-w-0 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl overflow-hidden shadow-sm flex-col"><div id="timelineScroll" class="overflow-x-scroll overflow-y-auto max-h-[75vh]"><table id="timelineTable" class="w-max min-w-full text-left"></table></div></div>
       </div>
+
+      <!-- Full-Width Calendar Container -->
       <div id="calendarContainer" class="hidden rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 overflow-auto shadow-sm"><div id="calendarContent" class="min-w-0"></div></div>
     </main>
   </div>
+
+  <!-- ==========================================================================
+       SECTION 4: MODALS & CONTEXT MENUS
+       Includes: Column Visibility Menu, Upload/Import, Unified Edit, Confirm Action
+       ========================================================================== -->
+  <!-- 4A. Column Visibility Context Menu (Right-click table header) -->
   <div id="columnContextMenu" class="fixed z-50 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl shadow-xl py-2 w-52 text-xs hidden">
     <div class="px-3 py-1 font-bold text-slate-400 uppercase text-[10px] border-b border-slate-100 dark:border-slate-800 mb-1 flex justify-between items-center"><span>Toggle Columns</span><i data-lucide="columns" class="w-3.5 h-3.5"></i></div>
     <div id="contextMenuItems" class="max-h-60 overflow-y-auto px-1 space-y-0.5"></div>
     <div class="border-t border-slate-100 dark:border-slate-800 mt-1 pt-1 px-1"><button id="restoreColumnsBtn" class="w-full text-left px-2 py-1.5 text-indigo-600 dark:text-indigo-400 hover:bg-indigo-50 dark:hover:bg-slate-800 rounded font-medium flex items-center gap-1.5"><i data-lucide="rotate-ccw" class="w-3.5 h-3.5"></i><span>Restore Default State</span></button></div>
   </div>
+
+  <!-- 4B. File Upload / Import Modal -->
   <div id="uploadModal" class="fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
     <div class="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-xl max-w-md w-full p-6 space-y-4 relative">
       <button id="closeUploadModalBtn" class="absolute top-4 right-4 text-slate-400 hover:text-slate-600"><i data-lucide="x" class="w-5 h-5"></i></button>
@@ -98,19 +132,28 @@
       <div id="dropZone" class="border-2 border-dashed border-slate-300 dark:border-slate-700 hover:border-indigo-400 bg-slate-50 dark:bg-slate-800/50 rounded-xl p-8 text-center cursor-pointer transition-all"><input type="file" id="fileInput" accept=".json,.js" class="hidden" /><i data-lucide="upload-cloud" class="w-8 h-8 mx-auto mb-2 text-indigo-500"></i><p class="text-xs font-medium">Drop your JSON file here, or <span class="text-indigo-600 dark:text-indigo-400 underline">browse</span></p><p id="uploadModalHint" class="text-[11px] text-slate-400 mt-1">Single application MOP JSON file only</p></div>
     </div>
   </div>
+
+  <!-- 4C. Unified Edit Modal (Used for Cell Edit, Settings, App Meta, Timeline Range) -->
   <div id="editModal" class="fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
     <div class="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-xl max-w-md w-full p-6 space-y-4">
       <h3 id="editModalTitle" class="text-base font-semibold">Edit</h3><div id="editModalBody" class="space-y-3"></div>
       <div class="flex justify-end gap-2 pt-2 border-t border-slate-100 dark:border-slate-800"><button id="cancelEditBtn" class="px-3 py-1.5 border border-slate-300 dark:border-slate-700 rounded-lg text-xs font-medium hover:bg-slate-50 dark:hover:bg-slate-800">Cancel</button><button id="saveEditBtn" class="px-3 py-1.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg text-xs font-medium">Save</button></div>
     </div>
   </div>
+
+  <!-- 4D. Confirmation Modal (Delete App, Clear Plan, Export confirmation) -->
   <div id="confirmActionModal" class="fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-[60] hidden flex items-center justify-center p-4">
     <div class="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-2xl max-w-md w-full p-5">
       <div><h3 id="confirmActionTitle" class="text-base font-semibold">Confirm action</h3><p id="confirmActionMessage" class="mt-1 text-xs text-slate-500">This action cannot be undone.</p></div>
       <div class="mt-5 flex justify-end gap-2"><button id="cancelConfirmActionBtn" class="px-3 py-1.5 border border-slate-300 dark:border-slate-700 rounded-lg text-xs font-medium">Cancel</button><button id="confirmActionBtn" class="px-3 py-1.5 bg-red-600 hover:bg-red-700 text-white rounded-lg text-xs font-semibold">Confirm</button></div>
     </div>
   </div>
+
+  <!-- ==========================================================================
+       SECTION 5: APPLICATION JAVASCRIPT LOGIC
+       ========================================================================== -->
   <script>
+    /* --- 5.1 CONSTANTS, TEAMS DATA & MOP HIERARCHY STRUCTURE --- */
     const $ = (id) => document.getElementById(id);
     const TEAMS_DATA = [
       { teamName: "Infrastructure & Cloud Ops", members: ["Alex Rivera", "David Chen", "Sarah Jenkins"] },
@@ -132,6 +175,8 @@
       { id: 'checker', label: 'Checker', cls: 'min-w-[120px]' }, { id: 'comments', label: 'Comments', cls: 'min-w-[180px]' },
       { id: 'issues', label: 'Issues', cls: 'min-w-[180px]' }
     ];
+
+    /* --- 5.2 LOCALSTORAGE KEYS & PERSISTED STATE --- */
     const KEYS = { APPS: 'edr_planner_uploaded_apps', STATES: 'edr_planner_collapsed_states', COLS: 'edr_planner_column_visibility', SELECTED: 'edr_planner_selected_app_id', FROZEN: 'edr_planner_frozen_columns', THEME: 'edr_planner_theme', DEPS: 'edr_planner_dependency_options', TYPES: 'edr_planner_type_options', TL_RANGE: 'edr_planner_timeline_range' };
     const DEFAULT_COLS = Object.fromEntries(COLUMNS.map(c => [c.id, !['actualStart', 'actualEnd', 'dependency'].includes(c.id)]));
     const save = (k, v) => { try { localStorage.setItem(k, JSON.stringify(v)); } catch (e) { console.error(e); } };
@@ -146,6 +191,7 @@
     let calendarView = 'month', calendarDate = new Date(), pendingConfirmAction = null, isDarkMode = localStorage.getItem(KEYS.THEME) === 'dark';
     let calendarVisibleKinds = { start: false, end: true, actualStart: false, actualEnd: false };
 
+    /* --- 5.3 DATE & STRING FORMATTING HELPERS --- */
     const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'], pad = (n) => String(n).padStart(2, '0');
     const cleanDesc = (d) => d && !['No description provided', 'No description', 'EDR MOP execution plan.'].includes(d) ? d.trim() : '';
     function formatFriendlyDateTime(val) {
@@ -157,6 +203,7 @@
     }
     const nowStamp = () => formatFriendlyDateTime(new Date()), touchApp = (app) => { if (app) app.lastUpdated = nowStamp(); };
 
+    /* --- 5.4 THEME (LIGHT / NIGHT MODE) & TABLE HEADER INIT --- */
     $('headerRow').innerHTML = COLUMNS.map(c => `<th data-col="${c.id}" class="h-14 py-2 px-3 border-b border-r border-slate-200 dark:border-slate-700 ${c.cls}"><span>${c.label}</span><button type="button" onclick="toggleFreezeColumn('${c.id}', event)" class="freeze-btn p-1 rounded bg-white dark:bg-slate-700 border border-slate-300 dark:border-slate-600 text-slate-500 hover:text-indigo-600" title="Freeze/Unfreeze column"><i data-lucide="lock" class="w-3 h-3"></i></button></th>`).join('');
 
     function applyTheme() {
@@ -167,6 +214,7 @@
     }
     $('themeToggleBtn').onclick = () => { isDarkMode = !isDarkMode; applyTheme(); };
 
+    /* --- 5.5 FILE UPLOAD & MULTI-APP IMPORT HANDLING --- */
     function openFileModal(mode) {
       uploadMode = mode; const isMulti = mode === 'multi';
       $('uploadModalTitle').textContent = isMulti ? 'Import Multi-App Planner JSON' : 'Add Single Application MOP';
@@ -220,6 +268,7 @@
       });
     }
 
+    /* --- 5.6 ACTION CONFIRMATION MODAL HELPER --- */
     function openConfirm({ title, message, confirmText, onConfirm }) {
       $('confirmActionTitle').textContent = title; $('confirmActionMessage').textContent = message;
       $('confirmActionBtn').textContent = confirmText || 'Confirm'; pendingConfirmAction = onConfirm;
@@ -228,6 +277,7 @@
     $('cancelConfirmActionBtn').onclick = () => $('confirmActionModal').classList.add('hidden');
     $('confirmActionBtn').onclick = () => { if (pendingConfirmAction) pendingConfirmAction(); $('confirmActionModal').classList.add('hidden'); };
 
+    /* --- 5.7 SIDEBAR RENDERING & APP FILTERING --- */
     function selectAppFilter(appId) { selectedAppId = appId; save(KEYS.SELECTED, selectedAppId); renderSidebar(); renderPlanner(); }
     function removeApp(appId, e) {
       e.stopPropagation();
@@ -254,6 +304,7 @@
       $('appList').innerHTML = html; lucide.createIcons();
     }
 
+    /* --- 5.8 HIERARCHY COLLAPSE & COLUMN FREEZING LOGIC --- */
     function toggleCollapse(id) { collapsedStates[id] = !collapsedStates[id]; save(KEYS.STATES, collapsedStates); renderPlanner(); }
     $('expandAllBtn').onclick = () => { collapsedStates = {}; save(KEYS.STATES, collapsedStates); renderPlanner(); };
     $('collapseAllBtn').onclick = () => { STRUCTURE.forEach(p => { collapsedStates[p.phase] = true; p.subPhases.forEach(sp => collapsedStates[`${p.phase}-${sp}`] = true); }); save(KEYS.STATES, collapsedStates); renderPlanner(); };
@@ -291,6 +342,7 @@
     document.addEventListener('click', (e) => { if (!$('columnContextMenu').contains(e.target)) $('columnContextMenu').classList.add('hidden'); });
     $('restoreColumnsBtn').onclick = () => { columnVisibility = { ...DEFAULT_COLS }; frozenColumns = []; save(KEYS.COLS, columnVisibility); save(KEYS.FROZEN, frozenColumns); applyColumnVisibility(); $('columnContextMenu').classList.add('hidden'); };
 
+    /* --- 5.9 DUAL TABLE & TIMELINE VERTICAL SCROLL SYNC --- */
     let syncingScroll = false;
     $('tableScroll').addEventListener('scroll', () => {
       requestAnimationFrame(applyColumnVisibility);
@@ -300,6 +352,7 @@
       if (!syncingScroll) { syncingScroll = true; $('tableScroll').scrollTop = $('timelineScroll').scrollTop; requestAnimationFrame(() => { syncingScroll = false; }); }
     }, { passive: true });
 
+    /* --- 5.10 MAIN PLANNER RENDERER (TABLE + GANTT TIMELINE) --- */
     function renderPlanner() {
       const q = $('searchInput').value.toLowerCase();
       const apps = selectedAppId === 'ALL' ? uploadedApps : uploadedApps.filter(a => a.id === selectedAppId);
@@ -363,6 +416,7 @@
       lucide.createIcons();
     }
 
+    /* --- 5.11 APP METADATA, SETTINGS & TIMELINE RANGE EDITORS --- */
     function formatDateTimeForInput(val) {
       if (!val || val === '-') return '';
       const d = new Date(val);
@@ -370,6 +424,7 @@
     }
     const inputCls = "w-full bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-lg p-2 text-xs focus:outline-none focus:border-indigo-500";
 
+    // Edit Application name and description (Pencil icon on sidebar)
     window.editAppMeta = (appId, e) => {
       e.stopPropagation();
       const app = uploadedApps.find(a => a.id === appId);
@@ -380,6 +435,7 @@
       $('editModal').classList.remove('hidden'); $('edAppName').focus();
     };
 
+    // Settings Modal: Dependencies & Task Types dropdown options manager
     function renderSettingsModalBody() {
       const chip = (v, kind, idx) => `<span class="group inline-flex items-center gap-1 px-2 py-0.5 rounded bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-xs font-medium"><span>${v}</span><button type="button" onclick="removeDropdownOption('${kind}', ${idx})" title="Remove" class="opacity-0 group-hover:opacity-100 text-slate-400 hover:text-red-500 font-bold leading-none ml-0.5 transition-opacity">&times;</button></span>`;
       const sec = (lbl, opts, kind, id, ph) => `<div class="space-y-2 ${kind === 'type' ? 'pt-2 border-t border-slate-100 dark:border-slate-800' : ''}"><label class="block text-xs font-semibold">${lbl}</label><div class="flex flex-wrap gap-1.5 p-2 rounded-lg border border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-950/40 max-h-28 overflow-y-auto">${opts.map((v, i) => chip(v, kind, i)).join('')}</div><div class="flex gap-1.5"><input id="${id}" type="text" placeholder="${ph}" class="${inputCls}" /><button type="button" onclick="addDropdownOption('${kind}')" class="shrink-0 px-3 py-1.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg text-xs font-semibold">Add</button></div></div>`;
@@ -399,6 +455,7 @@
     };
     $('openSettingsBtn').onclick = () => { activeTaskRef = { mode: 'settings' }; $('editModalTitle').textContent = 'Settings'; renderSettingsModalBody(); $('editModal').classList.remove('hidden'); };
 
+    // Timeline Date Range custom filter
     window.openTimelineRangeModal = (e) => {
       if (e) e.stopPropagation();
       activeTaskRef = { mode: 'timelineRange' };
@@ -408,6 +465,7 @@
     };
     window.resetTimelineRange = () => { timelineRange = { start: '', end: '' }; save(KEYS.TL_RANGE, timelineRange); $('editModal').classList.add('hidden'); renderPlanner(); };
 
+    /* --- 5.12 UNIFIED CELL EDITING (DOUBLE-CLICK / RIGHT-CLICK) --- */
     function triggerCellEdit(td, appId, taskId) {
       const col = td.dataset.col, app = uploadedApps.find(a => a.id === appId), task = app?.tasks.find(t => t.id === taskId);
       if (!task || ['index', 'appName'].includes(col)) return;
@@ -473,6 +531,7 @@
     $('tableBody').oncontextmenu = (e) => { const tr = e.target.closest('tr.task-row'), td = e.target.closest('td'); if (tr && td) { e.preventDefault(); triggerCellEdit(td, tr.dataset.appId, tr.dataset.taskId); } };
     $('tableBody').onkeydown = (e) => { if (e.key === 'Enter' || e.key === ' ') { const tr = e.target.closest('tr.task-row'); if (tr) { e.preventDefault(); triggerCellEdit(tr.querySelector('td[data-col="task"]'), tr.dataset.appId, tr.dataset.taskId); } } };
 
+    /* --- 5.13 EXPORT ENGINES (PORTABLE JSON & EXCEL WORKBOOK) --- */
     function exportPlannerDataFile() {
       const blob = new Blob([JSON.stringify({ apps: uploadedApps, depOptions, typeOptions, exportedAt: nowStamp() }, null, 2)], { type: 'application/json' });
       const url = URL.createObjectURL(blob), a = document.createElement('a');
@@ -495,6 +554,7 @@
     }
     $('exportJsonBtn').onclick = () => openConfirm({ title: 'Export workbook?', message: 'Generate an .xlsx file with the current planner data?', confirmText: 'Export XLSX', onConfirm: exportCurrentTableData });
 
+    /* --- 5.14 CALENDAR ENGINE (DAY, WEEK, MONTH & YEAR VIEWS) --- */
     const dateKey = (d) => `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
     const startOfWeek = (d) => { const s = new Date(d.getFullYear(), d.getMonth(), d.getDate()); const day = s.getDay(); s.setDate(s.getDate() + (day === 0 ? -6 : 1 - day)); return s; };
     const hourLabel = (h) => `${h % 12 || 12}:00 ${h >= 12 ? 'PM' : 'AM'}`, shortHour = (h) => `${h % 12 || 12} ${h >= 12 ? 'PM' : 'AM'}`;
@@ -562,6 +622,7 @@
       }
     }
 
+    /* --- 5.15 GANTT TIMELINE ENGINE (SIDE-BY-SIDE WITH TABLE) --- */
     function renderTimeline(allTasks) {
       const q = $('searchInput').value.toLowerCase();
       const validTimestamps = allTasks.flatMap(t => [new Date(t.start).getTime(), new Date(t.end).getTime()]).filter(ms => !Number.isNaN(ms));
@@ -616,6 +677,7 @@
       }
     }
 
+    /* --- 5.16 NAVIGATION, SHORTCUTS & EVENT LISTENERS --- */
     $('toggleTimelineBtn').onclick = () => { if (plannerView !== 'table') { plannerView = 'table'; showTimeline = true; } else showTimeline = !showTimeline; renderPlanner(); };
     document.querySelectorAll('[data-planner-view]').forEach(btn => { btn.onclick = () => { plannerView = btn.dataset.plannerView; renderPlanner(); }; });
     document.querySelectorAll('[data-calendar-view]').forEach(b => b.onclick = () => { plannerView = 'calendar'; calendarView = b.dataset.calendarView; renderPlanner(); });
@@ -642,6 +704,7 @@
     $('appSearchInput').oninput = renderSidebar;
     document.addEventListener('keydown', (e) => { if (e.key === 'Escape') ['uploadModal', 'editModal', 'confirmActionModal', 'columnContextMenu'].forEach(id => $(id).classList.add('hidden')); });
 
+    /* --- 5.17 APPLICATION BOOTSTRAP --- */
     applyTheme(); renderSidebar(); renderPlanner();
   </script>
 </body>
